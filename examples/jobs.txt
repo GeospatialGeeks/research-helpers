@@ -1,0 +1,4 @@
+# one command per line; run in order after the conditions given to "rh queue"
+python train.py --area london --year 2024
+python evaluate.py --area london
+python make_tables.py

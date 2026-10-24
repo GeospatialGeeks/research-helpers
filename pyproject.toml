@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-helpers"
+version = "0.1.0"
+description = "Everyday helpers for reproducible research: verified references, open-access full texts, LaTeX to Word, safe file writing, data registers, results tables, spatial cross-validation, job queues and literature-review screening."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Ammar Ahmad"}]
+keywords = ["research", "bibliography", "zotero", "crossref", "openalex", "latex", "pandoc", "systematic review", "spatial cross-validation", "reproducibility"]
+classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent",
+               "Intended Audience :: Science/Research", "Topic :: Scientific/Engineering"]
+dependencies = []
+
+[project.optional-dependencies]
+data = ["pandas>=1.5", "numpy>=1.23"]
+spatial = ["numpy>=1.23", "scipy>=1.9"]
+review = ["pandas>=1.5", "numpy>=1.23"]
+all = ["pandas>=1.5", "numpy>=1.23", "scipy>=1.9", "pyarrow>=12"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+rh = "research_helpers.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/AhmadAmmar/research-helpers"
+
+[tool.setuptools.packages.find]
+where = ["src"]
