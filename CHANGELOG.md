@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 - 2026-10-24
+
+`templates`: EC3 (European Conference on Computing in Construction) full-paper and poster templates, LaTeX and Word,
+with `ec3-paper` and `ec3-poster` starters (XeLaTeX); macOS metadata folders in archives are skipped.
+
 ## 0.3.0 - 2026-10-24
 
 `latex2docx`, Word output laid out like the PDF:

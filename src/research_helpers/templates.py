@@ -35,6 +35,17 @@ REGISTRY = {
         "licence": "IEEE GRSS paper kit, for papers submitted to IGARSS",
         "about": "IGARSS 2026 paper kit: LaTeX and Word templates for 4-page full papers, Word template for abstracts. "
                  "Rules: https://2026.ieeeigarss.org/Papers/paper_kit.php"},
+    "ec3-2026": {
+        "urls": ["https://ec-3.org/wp-content/uploads/2026/04/2026_EC3_LaTex__FullPaper_Template.zip",
+                 "https://ec-3.org/wp-content/uploads/2026/04/2026_EC3_Word__FullPaper_Template-.docx",
+                 "https://ec-3.org/wp-content/uploads/2026/04/2026_GuideFullPaper_Template.pdf",
+                 "https://ec-3.org/wp-content/uploads/2026/04/2026_EC3_LaTex__PosterExtendedAbstract_Template.zip",
+                 "https://ec-3.org/wp-content/uploads/2026/04/2026_EC3_Word__PosterExtendedAbstract_Template-.docx",
+                 "https://ec-3.org/wp-content/uploads/2026/04/2026_EC3_LaTex__PosterExtendedAbstract_Template.pdf"],
+        "licence": "EC3 (European Council for Computing in Construction) author templates, for papers submitted to EC3",
+        "about": "European Conference on Computing in Construction: full paper (8 pages, double-blind) and poster extended "
+                 "abstract (2 pages, 800 words) templates, LaTeX and Word, with the author guide. "
+                 "Rules: https://ec-3.org/conference/c2027/submissions/instructions-and-templates/"},
     "elsarticle": {
         "urls": ["https://mirrors.ctan.org/macros/latex/contrib/elsarticle.zip"],
         "post": ("elsarticle.ins", ["latex", "-interaction=nonstopmode", "elsarticle.ins"]),   # writes elsarticle.cls
@@ -63,6 +74,7 @@ REGISTRY = {
 # starters: what `new` copies into a fresh paper folder. main: the template file (first match); files: (entry, pattern)
 # pairs copied beside it; dirs: folders of the template copied as they are; bib: sample bibliography to start from
 BUILD = "pdflatex main; bibtex main; pdflatex main; pdflatex main"
+XEBUILD = "xelatex main; bibtex main; xelatex main; xelatex main"   # templates that load fontspec
 STARTERS = {
     "ieee-conference": {"entry": "ieeetran", "main": ["bare_conf.tex"],
                         "files": [("ieeetran", "IEEEtran.cls"), ("ieeetran", "IEEEtran.bst")], "csl": "ieee.csl", "build": BUILD,
@@ -73,6 +85,12 @@ STARTERS = {
     "igarss": {"entry": "igarss-2026", "main": ["IGARSS*LaTeXTemplate.tex", "*.tex"], "dirs": ["Figures"], "bib": "references.bib",
                "files": [("ieeetran", "IEEEtran.cls"), ("ieeetran", "IEEEtranN.bst")], "csl": "ieee.csl", "build": BUILD,
                "about": "IGARSS full paper, 4 pages, from the current paper kit (IEEEtran conference, A4)"},
+    "ec3-paper": {"entry": "ec3-2026", "main": ["format_guide.tex"], "files": [("ec3-2026", "apalikenonitalic.bst"),
+                  ("ec3-2026", "Extra.tex")], "dirs": ["img"], "bib": "references.bib", "csl": "apa.csl", "build": XEBUILD,
+                  "about": "EC3 full paper, 8 pages including references, double-blind (European Conference on Computing in Construction)"},
+    "ec3-poster": {"entry": "ec3-2026", "main": ["Poster.tex"], "files": [("ec3-2026", "apalikenonitalic.bst"),
+                   ("ec3-2026", "Extra.tex")], "dirs": ["img"], "bib": "references.bib", "csl": "apa.csl", "build": XEBUILD,
+                   "about": "EC3 poster extended abstract, 2 pages and at most 800 words"},
     "elsevier": {"entry": "elsarticle", "main": ["elsarticle-template-harv.tex", "elsarticle-template.tex"],
                  "files": [("elsarticle", "elsarticle.cls"), ("elsarticle", "elsarticle-harv.bst"), ("elsarticle", "elsarticle-num.bst")],
                  "csl": "elsevier-harvard.csl", "build": BUILD,
@@ -158,7 +176,7 @@ def _latest(lib, entry):
 
 def _find(root, patterns):
     for pat in patterns:
-        hits = sorted(root.rglob(pat))
+        hits = sorted(p for p in root.rglob(pat) if "__MACOSX" not in p.parts and not p.name.startswith("._"))
         if hits:
             return hits
     return []
@@ -182,9 +200,9 @@ def new(starter, dest, lib=None):
         if hit and not (dest / hit[0].name).exists():
             shutil.copy2(hit[0], dest / hit[0].name)
     for d in s.get("dirs", []):
-        hit = [p for p in src.rglob(d) if p.is_dir()]
+        hit = sorted(p for p in src.rglob(d) if p.is_dir() and "__MACOSX" not in p.parts)
         if hit:
-            shutil.copytree(hit[0], dest / d, ignore=shutil.ignore_patterns(".DS_Store"))
+            shutil.copytree(hit[0], dest / d, ignore=shutil.ignore_patterns(".DS_Store", "._*"))
     sample = _find(mains[0].parent, [s["bib"]]) if s.get("bib") else []
     csl = _latest(lib, "csl") or fetch(["csl"], lib)["csl"]
     hit = _find(csl, [s["csl"]])
