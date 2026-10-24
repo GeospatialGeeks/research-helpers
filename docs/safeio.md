@@ -11,7 +11,6 @@ output; original data (downloads, raw exports) should not be written by code at 
 
 ## Functions and classes
 
-
 **`keep(path, archive='_archive')`**
 
 Archive an existing file at `path` and return `path` as a pathlib.Path.

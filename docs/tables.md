@@ -17,14 +17,7 @@ its label, so \ref and \cref resolve while results are still being produced.
 
 ## Functions and classes
 
-
-**`from_dataframe(df, name, caption, columns=None, formats=None, align=None, note=None)`**
-
-a pandas DataFrame as a table: columns {col: header}, formats {col: decimals}
-
-
 **`latex_table(name, caption, header, rows, align, note=None, size='\\small', scale=True, placement='htbp')`**
-
 
 
 
@@ -32,14 +25,11 @@ a pandas DataFrame as a table: columns {col: header}, formats {col: decimals}
 
 format a number with d decimals; None / NaN -> missing
 
-
 **`pending_table(name, what)`**
 
 
 
-
 **`tex(s)`**
-
 
 
 

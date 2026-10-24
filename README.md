@@ -6,7 +6,8 @@ Everyday helpers for reproducible research, collected from a PhD project and gen
 |---|---|---|
 | `bib` | Verified BibTeX from DOIs (Crossref), title search, an author's works (OpenAlex), hand-off to Zotero | `rh bib`, `rh find-doi`, `rh author-works`, `rh zotero-push` |
 | `open_access` | Download open-access PDFs for DOIs and check that each file is the right paper | `rh oa` |
-| `latex2docx` | LaTeX to Word through pandoc, with the chapter, section, table and figure numbers and cross-references of the PDF | `rh latex2docx` |
+| `latex2docx` | LaTeX to Word through pandoc, laid out like the PDF (numbering, cross-references, title page, page numbering, tables, contents), or on a publisher's Word template (IEEE) | `rh latex2docx` |
+| `templates` | A local library of paper templates and citation styles from their official sources (IEEE, IGARSS, Elsevier, CSL), and new papers started from them | `rh template` |
 | `safeio` | `keep()`: never overwrite an output; earlier versions are archived | – |
 | `records` | Data register (sizes, checksums, sources) and a reference of scripts from their docstrings | `rh register`, `rh scripts` |
 | `tables` | Results as LaTeX booktabs tables, written from data | – |
@@ -54,6 +55,12 @@ rh oa dois.txt pdfs/
 # Word version of a LaTeX manuscript or thesis (A4, binding margin 40 mm, Arial 12 pt, 1.5 spacing)
 rh latex2docx thesis/main.tex Thesis.docx --csl harvard.csl --margins 40,25,25,25
 
+# paper templates: fetch the library once, then start papers from it; Word version of an IEEE paper on IEEE's template
+rh template fetch
+rh template list
+rh template new ieee-conference papers/my-conference-paper
+rh latex2docx papers/my-conference-paper/main.tex paper.docx --csl ieee.csl --profile ieee
+
 # records of a project
 rh register data/ --out records/data_register.csv
 rh scripts code/ --out records/pipeline_reference.md
@@ -78,7 +85,7 @@ rec = screen.apply(rec, {"pop": r"building|dwelling", "out": r"energy"}, rule=sc
 Each module has a guide in [`docs/`](docs/) with its options, how it works, and the methods it follows (with references):
 [bib](docs/bib.md), [open_access](docs/open_access.md), [latex2docx](docs/latex2docx.md), [safeio](docs/safeio.md),
 [records](docs/records.md), [tables](docs/tables.md), [spatial_cv](docs/spatial_cv.md), [jobqueue](docs/jobqueue.md),
-[litreview](docs/litreview.md). The full reference for each function is its docstring (`help(research_helpers.bib)`).
+[litreview](docs/litreview.md), [templates](docs/templates.md). The full reference for each function is its docstring (`help(research_helpers.bib)`).
 
 ## Principles
 

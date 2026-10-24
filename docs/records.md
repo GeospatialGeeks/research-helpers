@@ -21,9 +21,7 @@ what it reads, does and writes), as Markdown; a script documented in its docstri
 
 ## Functions and classes
 
-
 **`data_register(root, hash_limit_mb=200, skip=('_archive', '.git', '__pycache__'))`**
-
 
 
 
@@ -31,12 +29,8 @@ what it reads, does and writes), as Markdown; a script documented in its docstri
 
 scripts: list of paths relative to root (in run order); commands: {script: typical command}
 
-
 **`sha256(path, chunk=4194304)`**
 
 
 
-
 **`write_register(rows, out)`**
-
-

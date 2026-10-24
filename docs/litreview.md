@@ -18,6 +18,33 @@ flagged for manual screening. Requires pandas (pip install "research-helpers[rev
 ## Functions and classes
 
 
+### `research_helpers.litreview.bibliometrics`
+
+Descriptive bibliometrics of a corpus (the science-mapping summary of a review).
+
+    from research_helpers.litreview.bibliometrics import summary
+    s = summary(rec)            # dict: documents per year, growth rate, sources, countries, keywords, most cited
+
+Growth: the compound annual growth rate between a base year and the last complete year,
+CAGR = (n_end / n_base)^(1 / (end - base)) - 1. The last year of a corpus is usually incomplete and is left out.
+Countries are taken from the affiliations (the last comma-separated part of each address) with common spellings
+harmonised; check the result for your corpus. Keywords are the author keywords, lower case, counted once per record.
+For network maps (co-authorship, co-citation, keyword co-occurrence) export the corpus for VOSviewer (van Eck and
+Waltman 2010) or bibliometrix (Aria and Cuccurullo 2017).
+
+**`cagr(by_year, base=None, end=None)`**
+
+
+
+**`countries(aff)`**
+
+
+
+**`summary(rec, top=10, base_year=None)`**
+
+
+
+
 ### `research_helpers.litreview.ingest`
 
 Read Scopus (CSV) and Web of Science (tab-delimited) exports into one schema and remove duplicates.
@@ -34,9 +61,7 @@ the reason, for the PRISMA identification box.
 Scopus export: "CSV" with all citation, bibliographical, abstract and keyword fields. Web of Science export:
 "Tab delimited file", full record and cited references.
 
-
 **`deduplicate(allr)`**
-
 
 
 
@@ -44,14 +69,11 @@ Scopus export: "CSV" with all citation, bibliographical, abstract and keyword fi
 
 read the exports and remove duplicates: (records, duplicates)
 
-
 **`norm_doi(d)`**
 
 
 
-
 **`norm_title(t)`**
-
 
 
 
@@ -60,9 +82,7 @@ read the exports and remove duplicates: (records, duplicates)
 concept blocks of a Scopus TITLE-ABS-KEY(...) AND TITLE-ABS-KEY(...) query as compiled regular expressions
 (truncation * becomes word characters), to check which records a query would retrieve
 
-
 **`read_scopus(files)`**
-
 
 
 
@@ -88,9 +108,7 @@ be explained and audited, and the rules can be refined and re-run.
 Reviewer agreement: cohen_kappa(a, b) on a double-screened sample (report it with the sample size).
 PRISMA: prisma_counts(...) returns the numbers of the PRISMA 2020 flow diagram (Page et al. 2021).
 
-
 **`all_of(names)`**
-
 
 
 
@@ -98,9 +116,7 @@ PRISMA: prisma_counts(...) returns the numbers of the PRISMA 2020 flow diagram (
 
 
 
-
 **`apply(rec, criteria, rule, exclude_if=(), flag_if=(), cols=('title', 'abstract', 'author_keywords', 'index_keywords'))`**
-
 
 
 
@@ -108,42 +124,8 @@ PRISMA: prisma_counts(...) returns the numbers of the PRISMA 2020 flow diagram (
 
 
 
-
 **`prisma_counts(identified_db, duplicates, screened, excluded_screening, sought, not_retrieved, assessed, excluded_fulltext_reasons, included, identified_other=0)`**
 
 numbers of the PRISMA 2020 flow diagram, checked for consistency
 
-
 **`text_of(r, cols=('title', 'abstract', 'author_keywords', 'index_keywords'))`**
-
-
-
-
-### `research_helpers.litreview.bibliometrics`
-
-Descriptive bibliometrics of a corpus (the science-mapping summary of a review).
-
-    from research_helpers.litreview.bibliometrics import summary
-    s = summary(rec)            # dict: documents per year, growth rate, sources, countries, keywords, most cited
-
-Growth: the compound annual growth rate between a base year and the last complete year,
-CAGR = (n_end / n_base)^(1 / (end - base)) - 1. The last year of a corpus is usually incomplete and is left out.
-Countries are taken from the affiliations (the last comma-separated part of each address) with common spellings
-harmonised; check the result for your corpus. Keywords are the author keywords, lower case, counted once per record.
-For network maps (co-authorship, co-citation, keyword co-occurrence) export the corpus for VOSviewer (van Eck and
-Waltman 2010) or bibliometrix (Aria and Cuccurullo 2017).
-
-
-**`cagr(by_year, base=None, end=None)`**
-
-
-
-
-**`countries(aff)`**
-
-
-
-
-**`summary(rec, top=10, base_year=None)`**
-
-

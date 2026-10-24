@@ -19,12 +19,4 @@ another queue can wait for.
 
 ## Functions and classes
 
-
-**`jobs_from_file(path)`**
-
-
-
-
 **`run_queue(jobs, log, after_pid=None, after_file=None, after_text=None, wait_for_pattern=None, keep_awake=False, poll=60)`**
-
-

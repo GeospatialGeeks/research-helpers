@@ -25,21 +25,13 @@ where the model has seen similar conditions.
 
 ## Functions and classes
 
-
 **`AreaOfApplicability(weights=None)`**
-
 
 
 
 **`block_folds(x, y, block_size, k=5, seed=0)`**
 
 fold number (0..k-1) of every point; whole blocks are assigned to folds at random (seed)
-
-
-**`block_ids(x, y, block_size)`**
-
-
-
 
 **`repeated_block_cv(fit_predict, X, y, x, yc, block_sizes=(1000, 2000, 5000), seeds=(0, 1, 2), k=5, score=None)`**
 

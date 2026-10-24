@@ -20,9 +20,7 @@ DOIs saved before are skipped.
 
 ## Functions and classes
 
-
 **`elsevier_pdf(doi)`**
-
 
 
 
@@ -30,14 +28,11 @@ DOIs saved before are skipped.
 
 Download open-access PDFs for `dois` into `dest`. titles: {doi: title} for the check. Returns the log rows.
 
-
 **`matches(path, doi, title)`**
 
 True if the PDF's first pages contain the DOI or at least 80% of the title's longer words
 
-
 **`norm_doi(d)`**
-
 
 
 
@@ -45,16 +40,13 @@ True if the PDF's first pages contain the DOI or at least 80% of the title's lon
 
 OpenAlex records keyed by normalised DOI (batches of 40, with retries)
 
-
 **`pdf_text(path, first=1, last=3)`**
 
 text of the first pages (pdftotext if available, else pypdf, else empty)
 
-
 **`pdf_urls(w)`**
 
 open-access PDF addresses of one OpenAlex work, best location first
-
 
 **`semantic_scholar(dois)`**
 

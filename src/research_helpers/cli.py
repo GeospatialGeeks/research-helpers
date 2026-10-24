@@ -24,6 +24,8 @@ def main(argv=None):
     l.add_argument("--margins", default="25,25,25,25", help="left,right,top,bottom in mm")
     l.add_argument("--font", default="Arial"); l.add_argument("--size", type=float, default=12); l.add_argument("--spacing", type=float, default=1.5)
     l.add_argument("--figure-width", default="15cm")
+    l.add_argument("--profile", choices=["ieee"], help="publisher template profile: ieee (IEEE conference Word template, two columns)")
+    l.add_argument("--reference-docx", help="a publisher's Word template to take the styles from (e.g. IEEE conference-template-a4.docx)")
 
     r = sub.add_parser("register", help="data register of a folder"); r.add_argument("root"); r.add_argument("--out", default="data_register.csv")
     r.add_argument("--hash-limit-mb", type=float, default=200)
@@ -34,7 +36,26 @@ def main(argv=None):
     q.add_argument("jobs_file"); q.add_argument("--log", default="queue.log"); q.add_argument("--after-pid", type=int)
     q.add_argument("--after-file"); q.add_argument("--after-text", default="finished"); q.add_argument("--wait-for-pattern")
     q.add_argument("--keep-awake", action="store_true")
+    t = sub.add_parser("template", help="paper templates and citation styles: list, fetch, start a paper")
+    t.add_argument("action", choices=["list", "fetch", "new"]); t.add_argument("args", nargs="*")
+    t.add_argument("--library", help="library folder (default RH_TEMPLATES or ~/research-templates)")
     a = ap.parse_args(argv)
+
+    if a.cmd == "template":
+        from . import templates
+        if a.action == "list":
+            for r in templates.status(a.library):
+                print(f"{r['name']:24} {r['kind']:8} {'yes' if r['in_library'] else 'no ':4} {r['about'][:80]}")
+            print("\nstarters (rh template new <starter> <folder>):")
+            for k, s in templates.STARTERS.items():
+                print(f"  {k:18} {s['about']}")
+        elif a.action == "fetch":
+            templates.fetch(a.args or None, a.library)
+        elif a.action == "new":
+            if len(a.args) != 2:
+                ap.error("rh template new <starter> <folder>")
+            templates.new(a.args[0], a.args[1], a.library)
+        return 0
 
     if a.cmd == "bib":
         from . import bib
@@ -73,11 +94,12 @@ def main(argv=None):
             titles = {r["doi"]: r["title"] for r in csv.DictReader(open(a.titles, encoding="utf-8"))}
         fetch(dois, a.dest, titles, a.limit)
     if a.cmd == "latex2docx":
-        from .latex2docx import convert, PageSetup
+        from .latex2docx import convert, PageSetup, ieee_profile
         m = [float(x) for x in a.margins.split(",")]
         return convert(a.main_tex, a.out, csl=a.csl, numbers=a.numbers, figure_width=a.figure_width,
                        page=PageSetup(left_mm=m[0], right_mm=m[1], top_mm=m[2], bottom_mm=m[3], font=a.font, size_pt=a.size,
-                                      line_spacing=a.spacing))
+                                      line_spacing=a.spacing), reference_docx=a.reference_docx,
+                       profile=ieee_profile(a.reference_docx) if a.profile == "ieee" else None)
     if a.cmd == "register":
         from .records import data_register, write_register
         print(write_register(data_register(a.root, a.hash_limit_mb), a.out))

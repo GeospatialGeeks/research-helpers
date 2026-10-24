@@ -73,3 +73,39 @@ def test_numbering():
     out, names = _number(body, chapters=True)
     assert names["ch:i"] == "Chapter 1" and names["s:a"] == "Section 1.1" and names["tab:t"] == "Table 1.1" and names["app:d"] == "Appendix A"
     assert r"\begin{tabular}{lr}" in _tables(r"\begin{tabularx}{\linewidth}{Xr}x&y\end{tabularx}")
+
+
+def test_publisher_profile_numbering():
+    from research_helpers.latex2docx import Profile, _number, _roman
+    assert [_roman(n) for n in (1, 4, 9, 14)] == ["I", "IV", "IX", "XIV"]
+    p = Profile(reference_docx="x.docx", number_headings=False, caption_labels=False, section_name="Section {n}",
+                figure_name="Fig. {n}", table_name="Table {r}")
+    body = (r"\section{Intro}\label{s:i}\section{Data}\subsection{Labels}\label{s:l}"
+            r"\begin{figure}\caption{F}\label{fig:f}\end{figure}\begin{table}\caption{T}\label{tab:t}\end{table}"
+            r"\begin{table}\caption{U}\label{tab:u}\end{table}")
+    out, names = _number(body, chapters=False, profile=p)
+    assert names == {"s:i": "Section I", "s:l": "Section II-A", "fig:f": "Fig. 1", "tab:t": "Table I", "tab:u": "Table II"}
+    assert r"\caption{F}" in out and r"\section{Intro}" in out          # the template numbers them, not the text
+
+
+def test_profile_styles_and_columns():
+    from research_helpers.latex2docx import Profile, _apply_profile
+    p = Profile(reference_docx="x.docx", columns=2, styles={"FirstParagraph": "BodyText", "Bibliography": "references"},
+                strip_reference_numbers=True)
+    doc = ('<w:body><w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>T</w:t></w:r></w:p>'
+           '<w:p><w:r><w:t>RHSTYLEAuthorRHEND A. Author</w:t></w:r></w:p>'
+           '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Intro</w:t></w:r></w:p>'
+           '<w:p><w:pPr><w:pStyle w:val="FirstParagraph"/></w:pPr><w:r><w:t>Text</w:t></w:r></w:p>'
+           '<w:p><w:pPr><w:pStyle w:val="Bibliography"/></w:pPr><w:r><w:t>[1] Ref</w:t></w:r></w:p>'
+           '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1" w:right="1" w:bottom="1" w:left="1"/></w:sectPr></w:body>')
+    s = _apply_profile(doc, p)
+    assert '<w:pStyle w:val="Author"/>' in s and "RHSTYLE" not in s and '<w:pStyle w:val="BodyText"/>' in s
+    assert '<w:pStyle w:val="references"/>' in s and "[1]" not in s
+    assert s.count("<w:sectPr>") == 2 and '<w:cols w:num="2"' in s and s.index("<w:cols/>") < s.index("Intro")
+
+
+def test_template_registry():
+    from research_helpers import templates
+    for name, s in templates.STARTERS.items():
+        assert s["entry"] in templates.REGISTRY and all(e in templates.REGISTRY for e, _ in s.get("files", []))
+    assert all(("urls" in e) != ("manual" in e) for e in templates.REGISTRY.values())

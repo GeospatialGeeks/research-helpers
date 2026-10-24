@@ -31,29 +31,23 @@ RH_MAILTO=you@example.org to use Crossref's polite pool if you wish.
 
 ## Functions and classes
 
-
 **`author_works(name, institution=None, since=None, limit=200)`**
 
 OpenAlex works of an author (best match of the name, optionally at an institution): list of dicts
-
 
 **`bibtex(key, doi)`**
 
 cleaned BibTeX entry of a DOI with the given key
 
-
 **`crossref(doi)`**
 
 Crossref record of a DOI (raises if not found)
-
 
 **`make_key(m)`**
 
 author-year-word key, e.g. gorelick2017google
 
-
 **`push_queue(queue_file)`**
-
 
 
 
@@ -61,19 +55,15 @@ author-year-word key, e.g. gorelick2017google
 
 
 
-
 **`search_title(title, rows=3)`**
 
 Crossref candidates for a title: list of (doi, title, venue, year)
-
 
 **`title_matches(m, expected, need=0.6)`**
 
 True if the record's title contains most of the expected words (case and punctuation ignored)
 
-
 **`title_of(m)`**
-
 
 
 
@@ -81,16 +71,13 @@ True if the record's title contains most of the expected words (case and punctua
 
 records: list of (doi, crossref record). Returns those not delivered (Zotero closed or failure).
 
-
 **`write_bib(out, refs, expect=None, zotero=None, queue_file=None)`**
 
 refs: {key: doi} or list of DOIs (keys made automatically). expect: {key: expected title words}.
 Writes the .bib (archiving an existing one), offers the references to Zotero if `zotero` is given (a collection
 name, or True for the selected collection). Returns (written keys, problems).
 
-
 **`year_of(m)`**
-
 
 
 
@@ -98,7 +85,4 @@ name, or True for the selected collection). Returns (written keys, problems).
 
 DOIs already in the Zotero library (from a copy of zotero.sqlite, which Zotero keeps locked)
 
-
 **`zotero_item(m)`**
-
-
