@@ -20,10 +20,10 @@ Python 3.9 or later.
 
 ```bash
 # latest version from GitHub
-pip install "research-helpers[all] @ git+https://github.com/AhmadAmmar/research-helpers"
+pip install "research-helpers[all] @ git+https://github.com/GeospatialGeeks/research-helpers"
 
 # or a local copy, editable
-git clone https://github.com/AhmadAmmar/research-helpers
+git clone https://github.com/GeospatialGeeks/research-helpers
 cd research-helpers
 pip install -e ".[all]"
 ```
@@ -91,7 +91,7 @@ Each module has a guide in [`docs/`](docs/) with its options, how it works, and 
 
 If these helpers are useful in published work, please cite the repository:
 
-Ammar Ahmad (2026) *research-helpers: everyday helpers for reproducible research*. GitHub. https://github.com/AhmadAmmar/research-helpers
+Ammar Ahmad (2026) *research-helpers: everyday helpers for reproducible research*. GitHub. https://github.com/GeospatialGeeks/research-helpers
 
 ## Licence
 

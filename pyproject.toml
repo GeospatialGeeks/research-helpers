@@ -26,7 +26,7 @@ dev = ["pytest>=7"]
 rh = "research_helpers.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/AhmadAmmar/research-helpers"
+Homepage = "https://github.com/GeospatialGeeks/research-helpers"
 
 [tool.setuptools.packages.find]
 where = ["src"]
