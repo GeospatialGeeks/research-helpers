@@ -11,4 +11,4 @@ Modules (import only what you need; heavy dependencies are optional):
     jobqueue        run long jobs one after another, after a condition, with a log
     litreview       literature review: ingest Scopus / Web of Science, de-duplicate, rule-based screening, bibliometrics
 """
-__version__ = "0.1.0"
+__version__ = "0.2.0"

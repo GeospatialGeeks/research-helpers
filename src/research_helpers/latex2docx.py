@@ -43,6 +43,9 @@ class PageSetup:
     line_spacing: float = 1.5
     space_after_pt: float = 8
     language: str = "en-GB"
+    heading_color: str = "000000"        # hex; "" keeps pandoc's blue headings
+    link_color: str = "000073"           # hex; matches hyperref's blue!45!black
+    page_number: str = "right"           # page number in the header: "right", "center" or "" for none
 
 
 def pandoc_exe():
@@ -189,14 +192,47 @@ def _number(body, chapters):
     return "".join(out).replace(r"\chapter*{", r"\section*{"), names
 
 
-def reference_doc(dest, page, pandoc=None):
-    """pandoc's default reference.docx with the page set-up written into its XML"""
+W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+
+
+def _style(s, style_id, fn):
+    """apply fn to the XML of one style in styles.xml"""
+    return re.sub(r'<w:style [^>]*w:styleId="%s".*?</w:style>' % style_id, lambda m: fn(m.group(0)), s, count=1, flags=re.S)
+
+
+def _set_color(xml, color):
+    xml = re.sub(r"<w:color [^>]*/>", "", xml)
+    return re.sub(r"<w:rPr>", f'<w:rPr><w:color w:val="{color}" />', xml, count=1) if "<w:rPr>" in xml \
+        else xml.replace("</w:style>", f'<w:rPr><w:color w:val="{color}" /></w:rPr></w:style>')
+
+
+def _page_break_before(xml):
+    if "<w:pageBreakBefore" in xml:
+        return xml
+    if "<w:pPr>" in xml:
+        return xml.replace("<w:pPr>", "<w:pPr><w:pageBreakBefore />", 1)
+    at = "<w:rPr>" if "<w:rPr>" in xml else "</w:style>"
+    return xml.replace(at, "<w:pPr><w:pageBreakBefore /></w:pPr>" + at, 1)
+
+
+def reference_doc(dest, page, pandoc=None, chapters=False):
+    """pandoc's default reference.docx with the page set-up written into its XML: margins, font, size, spacing,
+    heading and link colours, a page number in the header and, for chapter documents, each top-level heading on a
+    new page"""
     raw = subprocess.run([pandoc or pandoc_exe(), "--print-default-data-file", "reference.docx"], capture_output=True).stdout
     zin, buf = zipfile.ZipFile(io.BytesIO(raw)), io.BytesIO()
     tw = lambda mm: int(round(mm * 56.6929))                       # twentieths of a point
+    jc = {"right": "right", "center": "center", "centre": "center"}.get(page.page_number or "")
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zout:
         for item in zin.infolist():
             data = zin.read(item.filename)
+            if item.filename == "[Content_Types].xml" and jc:
+                data = data.decode("utf-8").replace("</Types>", '<Override PartName="/word/header1.xml" ContentType='
+                    '"application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>').encode("utf-8")
+            if item.filename == "word/_rels/document.xml.rels" and jc:
+                data = data.decode("utf-8").replace("</Relationships>", '<Relationship Id="rIdRhHeader1" Type='
+                    '"http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>'
+                    "</Relationships>").encode("utf-8")
             if item.filename == "word/styles.xml":
                 s = data.decode("utf-8")
                 f = page.font
@@ -208,16 +244,83 @@ def reference_doc(dest, page, pandoc=None):
                 if i != -1 and j != -1:
                     k = s.find("/>", j) + 2
                     s = s[:j] + f'<w:spacing w:after="{int(page.space_after_pt * 20)}" w:line="{int(240 * page.line_spacing)}" w:lineRule="auto" />' + s[k:]
+                h1 = re.search(r'<w:style [^>]*w:styleId="Heading1".*?(<w:rPr>.*?</w:rPr>)', s, re.S)
+                if h1:                                                  # "Contents" and the lists look like chapters
+                    s = _style(s, "TOCHeading", lambda x: re.sub(r"<w:rPr>.*?</w:rPr>", lambda _: h1.group(1), x, flags=re.S)
+                               if "<w:rPr>" in x else x.replace("</w:style>", h1.group(1) + "</w:style>"))
+                if page.heading_color:
+                    for sid in ["Title", "Subtitle", "TOCHeading"] + [f"Heading{n}" for n in range(1, 10)]:
+                        s = _style(s, sid, lambda x: _set_color(x, page.heading_color))
+                if page.link_color:
+                    s = _style(s, "Hyperlink", lambda x: _set_color(x, page.link_color))
+                if chapters:
+                    s = _style(s, "Heading1", _page_break_before)
                 data = s.encode("utf-8")
             if item.filename == "word/document.xml":
                 s = data.decode("utf-8")
-                sect = (f'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="{tw(page.top_mm)}" w:right="{tw(page.right_mm)}" '
+                hdr = '<w:headerReference w:type="default" r:id="rIdRhHeader1"/>' if jc else ""
+                sect = (f'<w:sectPr>{hdr}<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="{tw(page.top_mm)}" w:right="{tw(page.right_mm)}" '
                         f'w:bottom="{tw(page.bottom_mm)}" w:left="{tw(page.left_mm)}" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>')
                 s = re.sub(r"<w:sectPr.*?</w:sectPr>|<w:sectPr\s*/>", sect, s, count=1, flags=re.S) if "<w:sectPr" in s \
                     else s.replace("</w:body>", sect + "</w:body>")
+                if jc and "xmlns:r=" not in s[:2000]:
+                    s = s.replace("<w:document ", '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ', 1)
                 data = s.encode("utf-8")
             zout.writestr(item, data)
+        if jc:
+            zout.writestr("word/header1.xml", f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr {W_NS}><w:p>'
+                          f'<w:pPr><w:jc w:val="{jc}"/></w:pPr>' + _field("PAGE", "1") + "</w:p></w:hdr>")
     pathlib.Path(dest).write_bytes(buf.getvalue())
+
+
+def _field(instr, shown=""):
+    """the runs of a Word field; Word computes it on opening (or F9)"""
+    return (f'<w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> {instr} '
+            f'</w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t xml:space="preserve">{shown}</w:t></w:r>'
+            '<w:r><w:fldChar w:fldCharType="end"/></w:r>')
+
+
+# placeholders written into the LaTeX for pandoc, replaced in the Word XML afterwards
+_MARK = {"RHMARKTOC": ("Contents", 'TOC \\o "1-3" \\h \\z \\u'),
+         "RHMARKLOF": ("List of figures", 'TOC \\h \\z \\t "Image Caption,1"'),
+         "RHMARKLOT": ("List of tables", 'TOC \\h \\z \\t "Table Caption,1"')}
+_FRONT_END = "RHMARKFRONTEND"
+
+
+def _paragraph_with(text):
+    return r"<w:p(?:\s[^>]*)?>(?:(?!<w:p[\s>]).)*?" + text + r"(?:(?!<w:p[\s>]).)*?</w:p>"
+
+
+def _postprocess(docx, chapters):
+    """Word fields for the contents and the lists of figures and tables, a centred title page, and a request to
+    Word to update the fields when the document is opened"""
+    path = pathlib.Path(docx)
+    zin = zipfile.ZipFile(io.BytesIO(path.read_bytes())); buf = io.BytesIO()
+    brk = "<w:pageBreakBefore/>" if chapters else ""
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "word/document.xml":
+                s = data.decode("utf-8")
+                for mark, (title, instr) in _MARK.items():
+                    s = re.sub(_paragraph_with(mark), lambda m, t=title, i=instr:
+                               f'<w:p><w:pPr><w:pStyle w:val="TOCHeading"/>{brk}</w:pPr><w:r><w:t>{t}</w:t></w:r></w:p>'
+                               f"<w:p>{_field(i, 'Right-click and choose Update Field.')}</w:p>", s, count=1, flags=re.S)
+                m = re.search(_paragraph_with(_FRONT_END), s, flags=re.S)
+                if m:
+                    start = s.find("<w:body>") + len("<w:body>")
+                    front = re.sub(r"<w:p>(?!<w:pPr>)", '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="480"/></w:pPr>',
+                                   s[start:m.start()])
+                    front = re.sub(r"<w:pPr>(?!<w:jc)", '<w:pPr><w:jc w:val="center"/><w:spacing w:before="480"/>', front)
+                    s = s[:start] + front + s[m.end():]
+                data = s.encode("utf-8")
+            if item.filename == "word/settings.xml":
+                s = data.decode("utf-8")
+                if "w:updateFields" not in s:
+                    s = re.sub(r"(<w:settings[^>]*>)", r'\1<w:updateFields w:val="true"/>', s, count=1)
+                data = s.encode("utf-8")
+            zout.writestr(item, data)
+    path.write_bytes(buf.getvalue())
 
 
 def convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width="15cm", front_matter="", keep_intermediate=False):
@@ -240,6 +343,8 @@ def convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width="1
     body = re.sub(r"\\begin\{keyword\}(.*?)\\end\{keyword\}",
                   lambda m: "\\textbf{Keywords:} " + m.group(1).replace("\\sep", ";"), body, flags=re.S)
     body = re.sub(r"\\(linenumbers|nolinenumbers)\b", "", body)
+    for macro, mark in (("tableofcontents", "RHMARKTOC"), ("listoffigures", "RHMARKLOF"), ("listoftables", "RHMARKLOT")):
+        body = re.sub(r"\\" + macro + r"\b", "\n\n" + mark + "\n\n", body)
     body = re.sub(r"\\(tableofcontents|listoffigures|listoftables|clearpage|cleardoublepage|newpage|FloatBarrier|centering|glsaddall|onehalfspacing|doublespacing|maketitle)\b", "", body)
     body = re.sub(r"\\pagenumbering\{[^}]*\}|\\addcontentsline\{[^}]*\}\{[^}]*\}\{[^}]*\}|\\vspace\*?\{[^}]*\}|\\vfill|\\needspace\{[^}]*\}", "", body)
     acr = re.findall(r"\\newacronym(?:\[[^\]]*\])?\{[^}]*\}\{(.*?)\}\{(.*?)\}\s*$", abbr, re.M)
@@ -277,6 +382,8 @@ def convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width="1
 
     title = re.search(r"\\title\{(.*?)\}", pre + body, re.S)
     tmp_dir = out.parent
+    if front_matter:
+        front_matter = front_matter.rstrip() + "\n\n" + _FRONT_END + "\n\n"
     tex = "\\documentclass{article}\n\\begin{document}\n" + front_matter + body + "\n\\end{document}\n"
     tmp = out.with_suffix(".pandoc.tex"); tmp.write_text(tex, encoding="utf-8")
     bibs = []
@@ -286,7 +393,7 @@ def convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width="1
         if p.exists():
             t = re.sub(r"(\btitle\s*=\s*)\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1{{\2}}", p.read_text(encoding="utf-8"))
             q = tmp_dir / f"_{p.stem}.bib"; q.write_text(t, encoding="utf-8"); bibs.append(q)
-    ref = tmp_dir / "_reference.docx"; pandoc = pandoc_exe(); reference_doc(ref, page, pandoc)
+    ref = tmp_dir / "_reference.docx"; pandoc = pandoc_exe(); reference_doc(ref, page, pandoc, chapters)
     figs = [base / "figures", base] + [base / p for p in re.findall(r"\{([^{}]+/)\}", (re.search(r"\\graphicspath\{(.*?)\}\s*$", pre, re.M) or [None, ""])[1])]
     cmd = [pandoc, str(tmp), "-f", "latex", "-t", "docx", "-o", str(out), "--resource-path", os.pathsep.join(str(f) for f in figs),
            "--reference-doc", str(ref), "--metadata", f"lang={page.language}", "--metadata", "link-citations=true"]
@@ -297,6 +404,8 @@ def convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width="1
     if csl:
         cmd += ["--csl", str(csl)]
     r = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
+    if r.returncode == 0:
+        _postprocess(out, chapters)
     if not keep_intermediate:
         for f in [tmp, ref] + bibs:
             f.unlink(missing_ok=True)

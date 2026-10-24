@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "research-helpers"
-version = "0.1.0"
+version = "0.2.0"
 description = "Everyday helpers for reproducible research: verified references, open-access full texts, LaTeX to Word, safe file writing, data registers, results tables, spatial cross-validation, job queues and literature-review screening."
 readme = "README.md"
 requires-python = ">=3.9"

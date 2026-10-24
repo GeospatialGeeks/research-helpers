@@ -8,7 +8,7 @@ Command line:
 
 Python:
     from research_helpers.latex2docx import convert, PageSetup
-    convert("thesis/main.tex", "Thesis.docx", csl="ulster-harvard-lhs.csl", page=PageSetup(left_mm=40))
+    convert("thesis/main.tex", "Thesis.docx", csl="ulster-harvard-lhs.csl", page=PageSetup(left_mm: float = 25, right_mm: float = 25, top_mm: float = 25, bottom_mm: float = 25, font: str = 'Arial', size_pt: float = 12, line_spacing: float = 1.5, space_after_pt: float = 8, language: str = 'en-GB', heading_color: str = '000000', link_color: str = '000073', page_number: str = 'right') -> None)
 
 Requirements: pandoc (2.11 or later) on the PATH or in RH_PANDOC.
 
@@ -32,9 +32,9 @@ from pandoc's default by editing its XML, so Microsoft Word is not needed.
 ## Functions and classes
 
 
-**`PageSetup(left_mm: float = 25, right_mm: float = 25, top_mm: float = 25, bottom_mm: float = 25, font: str = 'Arial', size_pt: float = 12, line_spacing: float = 1.5, space_after_pt: float = 8, language: str = 'en-GB') -> None`**
+**`PageSetup(left_mm: float = 25, right_mm: float = 25, top_mm: float = 25, bottom_mm: float = 25, font: str = 'Arial', size_pt: float = 12, line_spacing: float = 1.5, space_after_pt: float = 8, language: str = 'en-GB', heading_color: str = '000000', link_color: str = '000073', page_number: str = 'right') -> None -> None`**
 
-PageSetup(left_mm: float = 25, right_mm: float = 25, top_mm: float = 25, bottom_mm: float = 25, font: str = 'Arial', size_pt: float = 12, line_spacing: float = 1.5, space_after_pt: float = 8, language: str = 'en-GB')
+PageSetup(left_mm: float = 25, right_mm: float = 25, top_mm: float = 25, bottom_mm: float = 25, font: str = 'Arial', size_pt: float = 12, line_spacing: float = 1.5, space_after_pt: float = 8, language: str = 'en-GB', heading_color: str = '000000', link_color: str = '000073', page_number: str = 'right') -> None
 
 
 **`convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width='15cm', front_matter='', keep_intermediate=False)`**

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 - 2026-10-24
+
+`latex2docx`, Word output closer to the PDF:
+- the contents and the lists of figures and tables become Word fields (Word fills them in when the file is opened);
+- chapter documents start each chapter (top-level heading) on a new page;
+- the title page (`front_matter`) is centred;
+- a page number in the header (`PageSetup.page_number`, "right" by default);
+- heading and link colours (`PageSetup.heading_color`, `PageSetup.link_color`), black headings by default.
+
 ## 0.1.0 - 2026-10-24
 
 First release, generalised from the helpers of a PhD project on Earth observation and building energy efficiency
