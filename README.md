@@ -100,6 +100,10 @@ If these helpers are useful in published work, please cite the repository:
 
 Ammar Ahmad (2026) *research-helpers: everyday helpers for reproducible research*. GitHub. https://github.com/GeospatialGeeks/research-helpers
 
+## Ownership and funding
+
+Copyright © Ulster University: developed by Ammar Ahmad during a PhD at Ulster University, funded by a Vice-Chancellor's Research Scholarship (VCRS); intellectual property arising from research degrees belongs to the University under its Intellectual Property Policy. Released under the MIT licence.
+
 ## Licence
 
 MIT (see [LICENSE](LICENSE)). The methods implemented are credited in each guide; please cite the original papers when you use them.
