@@ -20,6 +20,7 @@ data = ["pandas>=1.5", "numpy>=1.23"]
 spatial = ["numpy>=1.23", "scipy>=1.9"]
 review = ["pandas>=1.5", "numpy>=1.23"]
 all = ["pandas>=1.5", "numpy>=1.23", "scipy>=1.9", "pyarrow>=12"]
+slides = ["python-pptx>=0.6"]
 dev = ["pytest>=7"]
 
 [project.scripts]

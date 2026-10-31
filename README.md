@@ -15,6 +15,17 @@ Everyday helpers for reproducible research, collected from a PhD project and gen
 | `jobqueue` | Run long jobs one after another, after a condition, with a log (overnight runs) | `rh queue` |
 | `litreview` | Scopus and Web of Science ingest and de-duplication, rule-based screening, reviewer agreement, PRISMA counts, bibliometrics | – |
 
+## Slides to images and PowerPoint
+
+`research_helpers.carousel` turns a slide PDF into square PNG images and a PowerPoint deck with speaker notes, for social media and teaching.
+
+```python
+from research_helpers.carousel import pdf_to_images, images_to_pptx
+
+images = pdf_to_images("slides.pdf", "images", pixels=1440)
+images_to_pptx(images, "slides.pptx", notes=["Read this aloud."] * len(images))
+```
+
 ## Installation
 
 Python 3.9 or later.
