@@ -98,11 +98,11 @@ Each module has a guide in [`docs/`](docs/) with its options, how it works, and 
 
 If these helpers are useful in published work, please cite the repository:
 
-Ammar Ahmad (2026) *research-helpers: everyday helpers for reproducible research*. GitHub. https://github.com/GeospatialGeeks/research-helpers
+Ahmad Ammar (2026) *research-helpers: everyday helpers for reproducible research*. GitHub. https://github.com/GeospatialGeeks/research-helpers
 
 ## Ownership and funding
 
-Copyright © Ulster University: developed by Ammar Ahmad during a PhD at Ulster University, funded by a Vice-Chancellor's Research Scholarship (VCRS); intellectual property arising from research degrees belongs to the University under its Intellectual Property Policy. Released under the MIT licence.
+Copyright © Ulster University: developed by Ahmad Ammar during a PhD at Ulster University, funded by a Vice-Chancellor's Research Scholarship (VCRS); intellectual property arising from research degrees belongs to the University under its Intellectual Property Policy. Released under the MIT licence.
 
 ## Licence
 

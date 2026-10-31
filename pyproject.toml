@@ -9,7 +9,7 @@ description = "Everyday helpers for reproducible research: verified references, 
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "Ammar Ahmad"}]
+authors = [{name = "Ahmad Ammar"}]
 keywords = ["research", "bibliography", "zotero", "crossref", "openalex", "latex", "pandoc", "systematic review", "spatial cross-validation", "reproducibility"]
 classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent",
                "Intended Audience :: Science/Research", "Topic :: Scientific/Engineering"]
