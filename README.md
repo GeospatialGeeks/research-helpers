@@ -113,7 +113,7 @@ Ahmad Ammar (2026) *research-helpers: everyday helpers for reproducible research
 
 ## Ownership and funding
 
-Copyright © Ulster University: developed by Ahmad Ammar during a PhD at Ulster University, funded by a Vice-Chancellor's Research Scholarship (VCRS); intellectual property arising from research degrees belongs to the University under its Intellectual Property Policy. Released under the MIT licence.
+Copyright © Ahmad Ammar. Developed during a PhD at Ulster University, supported by a Vice-Chancellor's Research Scholarship (VCRS). Released under the MIT licence.
 
 ## Licence
 
