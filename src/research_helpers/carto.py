@@ -7,11 +7,13 @@ Needs the optional extra: pip install research-helpers[carto]
     fig, ax = carto.map_axes(carto.albers(85, 25, 45), [60, 105, 22, 46], width="double")
     carto.scale_bar(ax); carto.save(fig, "figures/map")
 """
+import json
 from pathlib import Path
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib as mpl
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 from cmcrameri import cm
 from matplotlib_scalebar.scalebar import ScaleBar
@@ -24,6 +26,7 @@ QUALITATIVE = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9", "#D55E00",
 SEQUENTIAL = cm.batlow
 DIVERGING = cm.vik
 ELEVATION = cm.oleron
+BOUNDARY_NOTE = "Boundaries imply no position on any territorial claim."
 MUTED_LAND, MUTED_WATER, GRID = "#f4f2ec", "#dfe9ef", "#b8b8b8"
 
 
@@ -70,7 +73,7 @@ def map_axes(projection, extent=None, width="double", ratio=0.62, ax=None, grid=
 
 def scale_bar(ax, location="lower left"):
     """Scale bar in metres of the map's projection. It is true along the standard parallels only; say so in the caption."""
-    bar = ScaleBar(1, "m", location=location, frameon=False, font_properties={"size": 6.5}, length_fraction=0.18, width_fraction=0.008, color=INK, scale_loc="top")
+    bar = ScaleBar(1, "m", location=location, frameon=True, box_color="white", box_alpha=0.8, font_properties={"size": 6.5}, length_fraction=0.18, width_fraction=0.008, color=INK, scale_loc="top")
     ax.add_artist(bar)
     return bar
 
@@ -94,3 +97,49 @@ def save(fig, stem, formats=("pdf", "png", "svg"), meta=None):
             md = {"Title": stem.name}
         fig.savefig(stem.with_suffix(f".{f}"), metadata=md)
     return stem
+
+
+def mark(ax, points, transform=None, size=7):
+    """Numbered markers with a halo, readable over any image. points is a list of (number, x, y); a caption or key explains them."""
+    transform = transform or ccrs.PlateCarree()
+    for n, x, y in points:
+        ax.text(x, y, str(n), transform=transform, ha="center", va="center", fontsize=size, fontweight="bold", color="black", zorder=20,
+                bbox=dict(boxstyle="circle,pad=0.25", facecolor="white", edgecolor="black", linewidth=0.5))
+
+
+def outlined(ax, x, y, text, transform=None, size=7, color="white"):
+    """A place label with an outline, for use over imagery."""
+    return ax.text(x, y, text, transform=transform or ccrs.PlateCarree(), fontsize=size, color=color, zorder=19, path_effects=[pe.withStroke(linewidth=1.8, foreground="black")])
+
+
+def locator(fig, position, extent, box, projection=None):
+    """Small overview map. position is [left, bottom, width, height] in figure units; box is the lon0, lon1, lat0, lat1 of the main map."""
+    a = fig.add_axes(position, projection=projection or ccrs.PlateCarree())
+    a.set_extent(extent, ccrs.PlateCarree())
+    a.add_feature(cfeature.LAND.with_scale("50m"), facecolor=MUTED_LAND, edgecolor="#666666", linewidth=0.3)
+    a.add_feature(cfeature.OCEAN.with_scale("50m"), facecolor=MUTED_WATER)
+    a.add_feature(cfeature.BORDERS.with_scale("50m"), edgecolor="#888888", linewidth=0.3)
+    x0, x1, y0, y1 = box
+    a.plot([x0, x1, x1, x0, x0], [y0, y0, y1, y1, y0], color="#D55E00", linewidth=0.9, transform=ccrs.PlateCarree())
+    return a
+
+
+def credit(fig, text, y=0.005):
+    fig.text(0.995, y, text, ha="right", va="bottom", fontsize=5.5, color="#444444")
+
+
+def finish_map(fig, stem, *, title, sources, crs, scale_bar=True, boundary_note=False, status="final", note="", formats=("pdf", "png", "svg")):
+    """The one exit for a map: it stops if basic elements are missing, and saves a record beside the map.
+
+    A map must name its sources and projection and either carry a scale bar or say why not. The record makes it findable and repeatable.
+    """
+    if not sources:
+        raise ValueError("a map must name its sources")
+    if not crs:
+        raise ValueError("a map must state its projection")
+    if scale_bar is not True and not isinstance(scale_bar, str):
+        raise ValueError("a map needs a scale bar, or a sentence saying why not")
+    s = save(fig, stem, formats, {"Title": title})
+    record = dict(title=title, sources=list(sources), crs=crs, scale_bar=scale_bar, boundary_note=BOUNDARY_NOTE if boundary_note else "", status=status, note=note, files=[s.with_suffix(f".{f}").name for f in formats])
+    s.with_suffix(".map.json").write_text(json.dumps(record, indent=1), encoding="utf8")
+    return s
