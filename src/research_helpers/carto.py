@@ -146,51 +146,97 @@ def finish_map(fig, stem, *, title, sources, crs, scale_bar=True, boundary_note=
     return s
 
 
-def story_map(stem, projection, draw, *, title, subtitle, key=(), legend=(), method="", source="", author="", map_share=None, map_aspect=1.0, page=(1080, 1920), dpi=200):
-    """A map that explains itself on one page, for social media or a slide: title, map, numbered key, legend, method and source.
+def story_map(stem, projection, draw, *, title, subtitle, key=(), legend=(), method="", source="", author="", map_share=0.62, page=(1080, 1920), dpi=200, key_wrap=31, note_wrap=66):
+    """A map that explains itself on one screen, for a story or a slide: title, map, two-column key, legend, one short note.
 
-    draw(ax, fig) adds the map content. key is [(number, name, what it shows)]. legend is [(colour, label)]. map_aspect is height over width.
-    The sizes suit a 1080 by 1920 story; pass page=(1080, 1350) for a portrait post.
+    draw(ax, fig) adds the map content. key is [(number, name, few words)]. legend is [(colour, label)]. Keep the text short:
+    the page raises an error if it overflows. Use page=(1080, 1350) for a portrait post.
     """
     w, h = page[0] / dpi, page[1] / dpi
     fig = plt.figure(figsize=(w, h), facecolor="white")
-    margin = 0.045
-    fig.text(margin, 0.972, title, fontsize=15, fontweight="bold", va="top", color=INK, wrap=True)
-    n_title = title.count("\n") + 1
-    top = 0.972 - 0.031 * n_title
-    fig.text(margin, top, subtitle, fontsize=8.2, va="top", color="#444444", linespacing=1.25)
-    top -= 0.0175 * (subtitle.count("\n") + 1) + 0.012
-    map_h = (map_share if map_share else min((1 - 2 * margin) * w * map_aspect / h, 0.56))
-    ax = fig.add_axes([margin + 0.05, top - map_h, 1 - 2 * margin - 0.05, map_h], projection=projection)
+    margin = 0.03
+    line = lambda size: size * 1.25 / 72 / h
+    y = 0.985
+    fig.text(margin, y, title, fontsize=17, fontweight="bold", va="top", color=INK)
+    y -= line(17) + 0.004
+    fig.text(margin, y, subtitle, fontsize=9.5, va="top", color="#333333", linespacing=1.2)
+    y -= line(9.5) * (subtitle.count("\n") + 1) + 0.008
+    ax = fig.add_axes([0, y - map_share, 1, map_share], projection=projection)
     draw(ax, fig)
-    y = top - map_h - 0.03
-    line = lambda size: size * 1.27 / 72 / h
+    y -= map_share + 0.012
     if legend:
         x = margin
         for colour, label in legend:
-            fig.patches.append(plt.Rectangle((x, y - 0.012), 0.036, 0.014, transform=fig.transFigure, facecolor=colour, edgecolor="#555555", linewidth=0.3))
-            fig.text(x + 0.045, y - 0.005, label, fontsize=8, va="center", color=INK)
-            x += 0.06 + 0.0122 * len(label)
-        y -= 0.033
-    for number, name, what in key:
-        fig.text(margin + 0.016, y - 0.002, str(number), fontsize=8.5, fontweight="bold", ha="center", va="top", color="black", bbox=dict(boxstyle="circle,pad=0.22", facecolor="white", edgecolor="black", linewidth=0.5))
-        lines = textwrap.wrap(f"{name}: {what}", 62)
-        fig.text(margin + 0.052, y, "\n".join(lines), fontsize=8.8, va="top", color=INK, linespacing=1.2)
-        y -= line(8.8) * len(lines) + 0.011
-    y -= 0.006
-    for label, text in (("How it was made", method), ("Sources", source)):
-        if text:
-            fig.text(margin, y, label, fontsize=8.2, fontweight="bold", va="top", color=INK)
-            y -= line(8.2) + 0.002
-            lines = textwrap.wrap(text, 72)
-            fig.text(margin, y, "\n".join(lines), fontsize=8, va="top", color="#333333", linespacing=1.2)
-            y -= line(8) * len(lines) + 0.012
-    if y < 0.012:
-        raise ValueError(f"the page overflows by {0.012 - y:.3f}: shorten the text or the map")
+            fig.patches.append(plt.Rectangle((x, y - 0.012), 0.04, 0.012, transform=fig.transFigure, facecolor=colour, edgecolor="#555555", linewidth=0.3))
+            fig.text(x + 0.048, y - 0.006, label, fontsize=9, va="center", color=INK)
+            x += 0.07 + 0.0148 * len(label)
+        y -= 0.024
+    rows = (len(key) + 1) // 2
+    heights = []
+    for r in range(rows):
+        cells = key[2 * r:2 * r + 2]
+        n_lines = 1
+        for c, (number, name, what) in enumerate(cells):
+            x = margin + c * 0.485
+            lines = textwrap.wrap(f"{name}: {what}", key_wrap)
+            n_lines = max(n_lines, len(lines))
+            fig.text(x + 0.016, y - 0.001, str(number), fontsize=9, fontweight="bold", ha="center", va="top", bbox=dict(boxstyle="circle,pad=0.2", facecolor="white", edgecolor="black", linewidth=0.5))
+            fig.text(x + 0.05, y, "\n".join(lines), fontsize=9, va="top", color=INK, linespacing=1.15)
+        y -= line(9) * n_lines + 0.009
+    y -= 0.002
+    note = " ".join(s for s in (method, source) if s)
+    if note:
+        lines = textwrap.wrap(note, note_wrap)
+        fig.text(margin, y, "\n".join(lines), fontsize=7.8, va="top", color="#444444", linespacing=1.15)
+        y -= line(7.8) * len(lines)
+    if y < 0.018:
+        raise ValueError(f"the page overflows by {0.018 - y:.3f}: shorten the text or the map")
     if author:
-        fig.text(1 - margin, 0.012, author, fontsize=6.5, ha="right", color="#666666")
+        fig.text(1 - margin, 0.008, author, fontsize=7, ha="right", color="#666666")
     stem = Path(stem)
     stem.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(stem.with_suffix(".png"), dpi=dpi, bbox_inches=None, facecolor="white")
+    fig.savefig(stem.with_suffix(".pdf"), dpi=dpi, bbox_inches=None, facecolor="white", metadata={"Title": title, "CreationDate": None})
+    fig.savefig(stem.with_suffix(".svg"), dpi=dpi, bbox_inches=None, facecolor="white", metadata={"Title": title, "Date": None})
+    _story_pptx(fig, stem, page, dpi)
     plt.close(fig)
     return stem
+
+
+def _story_pptx(fig, stem, page, dpi):
+    """An editable slide: the map and legend swatches as one picture, and every piece of page text as its own text box."""
+    from pptx import Presentation
+    from pptx.dml.color import RGBColor
+    from pptx.util import Emu, Pt
+    EMU = 914400 / dpi
+    prs = Presentation()
+    prs.slide_width, prs.slide_height = Emu(int(page[0] * EMU)), Emu(int(page[1] * EMU))
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    texts = list(fig.texts)
+    for x in texts:
+        x.set_visible(False)
+    picture = stem.parent / f"{stem.name}_base.png"
+    fig.savefig(picture, dpi=dpi, bbox_inches=None, facecolor="white")
+    for x in texts:
+        x.set_visible(True)
+    slide.shapes.add_picture(str(picture), 0, 0, prs.slide_width, prs.slide_height)
+    renderer = fig.canvas.get_renderer()
+    scale = dpi / fig.dpi
+    for x in texts:
+        box = x.get_window_extent(renderer)
+        left, top = box.x0 * scale * EMU, (fig.bbox.height - box.y1) * scale * EMU
+        width = max(box.width * scale * EMU * 1.12, 300000)
+        tb = slide.shapes.add_textbox(Emu(int(left)), Emu(int(top)), Emu(int(width)), Emu(int(box.height * scale * EMU)))
+        f = tb.text_frame
+        f.margin_left = f.margin_right = f.margin_top = f.margin_bottom = 0
+        f.word_wrap = False
+        for i, s in enumerate(x.get_text().split("\n")):
+            para = f.paragraphs[0] if i == 0 else f.add_paragraph()
+            run = para.add_run()
+            run.text = s
+            run.font.size = Pt(x.get_fontsize())
+            run.font.bold = x.get_fontweight() == "bold"
+            run.font.name = "Arial"
+            r, g, b = [int(c * 255) for c in mpl.colors.to_rgb(x.get_color())]
+            run.font.color.rgb = RGBColor(r, g, b)
+    prs.save(stem.with_suffix(".pptx"))
