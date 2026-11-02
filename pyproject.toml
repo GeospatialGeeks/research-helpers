@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "research-helpers"
-version = "0.4.0"
+version = "0.5.0"
 description = "Everyday helpers for reproducible research: verified references, open-access full texts, LaTeX to Word, safe file writing, data registers, results tables, spatial cross-validation, job queues and literature-review screening."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -16,6 +16,7 @@ classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :
 dependencies = []
 
 [project.optional-dependencies]
+carto = ["cartopy", "matplotlib", "matplotlib-scalebar", "cmcrameri"]
 data = ["pandas>=1.5", "numpy>=1.23"]
 spatial = ["numpy>=1.23", "scipy>=1.9"]
 review = ["pandas>=1.5", "numpy>=1.23"]
