@@ -1,0 +1,17 @@
+{
+ "title": "Mountain ranges of the Third Pole",
+ "sources": [
+  "GMBA Mountain Inventory v2",
+  "Natural Earth"
+ ],
+ "crs": "Albers equal-area, parallels 25N and 45N",
+ "scale_bar": true,
+ "boundary_note": "Boundaries imply no position on any territorial claim.",
+ "status": "final",
+ "note": "",
+ "files": [
+  "map_anatomy.pdf",
+  "map_anatomy.png",
+  "map_anatomy.svg"
+ ]
+}

@@ -1,0 +1,6 @@
+\snippetcaption{research\_helpers/carto.py, outlined(), lines 110--112}
+\begin{lstlisting}[firstnumber=110]
+def outlined(ax, x, y, text, transform=None, size=7, color="white"):
+    """A place label with an outline, for use over imagery."""
+    return ax.text(x, y, text, transform=transform or ccrs.PlateCarree(), fontsize=size, color=color, zorder=19, path_effects=[pe.withStroke(linewidth=1.8, foreground="black")])
+\end{lstlisting}

@@ -1,0 +1,13 @@
+\snippetcaption{research\_helpers/carto.py, locator(), lines 115--124}
+\begin{lstlisting}[firstnumber=115]
+def locator(fig, position, extent, box, projection=None):
+    """Small overview map. position is [left, bottom, width, height] in figure units; box is the lon0, lon1, lat0, lat1 of the main map."""
+    a = fig.add_axes(position, projection=projection or ccrs.PlateCarree())
+    a.set_extent(extent, ccrs.PlateCarree())
+    a.add_feature(cfeature.LAND.with_scale("50m"), facecolor=MUTED_LAND, edgecolor="#666666", linewidth=0.3)
+    a.add_feature(cfeature.OCEAN.with_scale("50m"), facecolor=MUTED_WATER)
+    a.add_feature(cfeature.BORDERS.with_scale("50m"), edgecolor="#888888", linewidth=0.3)
+    x0, x1, y0, y1 = box
+    a.plot([x0, x1, x1, x0, x0], [y0, y0, y1, y1, y0], color="#D55E00", linewidth=0.9, transform=ccrs.PlateCarree())
+    return a
+\end{lstlisting}

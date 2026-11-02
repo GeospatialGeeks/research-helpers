@@ -1,0 +1,21 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,graphicx,booktabs,xcolor,listings,float,tabularx}
+\usepackage[margin=24mm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../figures/}}
+\lstset{basicstyle=\ttfamily\scriptsize,breaklines=true,columns=fullflexible,keepspaces=true,numbers=left,numberstyle=\tiny\color{gray},frame=single,rulecolor=\color{gray!40},backgroundcolor=\color{gray!5},showstringspaces=false}
+\newcommand{\snippetcaption}[1]{\par\smallskip\noindent{\footnotesize\textbf{From the code:} \texttt{#1}}\par\nopagebreak}
+\title{Making maps that can be repeated and published\\\large A programming manual for Python, Matplotlib, Cartopy and research-helpers}
+\author{Ahmad Ammar}
+\date{}
+\begin{document}
+\maketitle
+\tableofcontents
+\input{ch_anatomy}
+\input{ch_stack}
+\input{ch_projection}
+\input{ch_colour}
+\input{ch_components}
+\input{ch_workflow}
+\end{document}

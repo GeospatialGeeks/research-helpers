@@ -1,0 +1,60 @@
+\chapter{From script to publication}\label{ch:workflow}
+
+\section{One way out: \texttt{finish\_map()}}
+Every map leaves through this function, which refuses a map without its sources or projection, or without a scale bar or a reason for having none. It saves three formats and a record.
+\input{generated/snip_finish_map.tex}
+\input{generated/snip_save.tex}
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Format & Use \\
+\midrule
+PDF & LaTeX and print; a vector, except for rasters within it \\
+PNG & The web and slides, at 400~dpi \\
+SVG & Later editing, with text kept as text \\
+\texttt{.map.json} & The record: title, sources, projection, status \\
+\bottomrule
+\end{tabularx}
+
+\section{Repeating a map}
+\begin{enumerate}
+\item One script draws one family of figures, and takes no manual steps.
+\item Data comes from named files or Earth Engine calls. Raw data is never edited.
+\item Downloads are cached, so a rerun does not depend on the network, and the file records what was used.
+\item Numbers in the text come from the same run, through \texttt{research\_helpers.autotex}.
+\item Every Earth Engine job also has a \texttt{.js} script in \texttt{earth-engine-code}.
+\item Figures carry the name of what they show, such as \texttt{map\_sindh\_flood\_2022}.
+\end{enumerate}
+
+\section{Loops for many maps}
+When maps differ only in their data, write one function and loop. Fixing the colour limits keeps them comparable.
+\begin{lstlisting}[language=Python]
+def range_map(unit, values, limits):
+    fig, ax = carto.map_axes(PROJ, EXTENT, width="single")
+    g[g.unit == unit].plot(ax=ax, column=values, vmin=limits[0], vmax=limits[1],
+                           cmap=carto.SEQUENTIAL, transform=ccrs.PlateCarree())
+    carto.scale_bar(ax)
+    carto.finish_map(fig, F / f"map_{unit.lower().replace(' ', '_')}", title=unit,
+                     sources=["GMBA"], crs="Albers equal-area")
+    plt.close(fig)              # free memory, or a long loop runs out
+
+for unit in g.unit.unique():
+    range_map(unit, "duration", (0, 250))
+\end{lstlisting}
+
+\section{Checklist}
+\begin{itemize}
+\item Is the projection right for the use, and is it stated?
+\item Is area measured in an equal-area projection?
+\item Are sources credited as their licences require?
+\item Does nothing cover the data: inset, legend or markers?
+\item Do the markers sit on what they claim? Check against the numbers.
+\item Are colours readable in greyscale and for colour-blind readers?
+\item Is text at least about 6~pt at printed size?
+\item Do disputed boundaries carry a note?
+\item Have you actually looked at the final file?
+\end{itemize}
+The last matters most. In making the maps in these projects, the code ran without error while markers missed their targets, polygons failed to draw, and a class vanished. Only looking caught them.
+
+\section{Different fields}
+Journals set their own limits: column width, formats, fonts, resolution. Set those through \texttt{size()} and the export options, and check the author guide. Journal requirements take priority over this manual. Elevation, geological and nautical maps also have their own conventions, such as standard symbols and colours, and these apply when you make such maps.

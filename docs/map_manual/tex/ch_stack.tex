@@ -1,0 +1,51 @@
+\chapter{The tools, and how they fit together}\label{ch:stack}
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Tool & Its job \\
+\midrule
+Matplotlib & Draws everything. A \emph{figure} is the page, and an \emph{axes} is one plot on it \\
+Cartopy & Adds map projections to Matplotlib; an axes with a projection is a \emph{GeoAxes} \\
+GeoPandas & Reads and reprojects vector data such as GeoJSON \\
+rasterio & Reads and reprojects rasters such as GeoTIFF \\
+NumPy & Holds raster values as arrays \\
+matplotlib-scalebar & Draws the scale bar \\
+cmcrameri & Scientific colour maps, from Crameri et al.\ (2020) \\
+Earth Engine & Computes on satellite archives, in the cloud \\
+research-helpers & Our layer: \texttt{carto} sets the house style and checks each map \\
+LaTeX & Places the finished map in a paper or book \\
+\bottomrule
+\end{tabularx}
+
+\section{Two ideas that prevent most mistakes}
+\paragraph{Figure size is set in inches, in journal widths.} Fonts are in points, so a figure drawn at its printed width keeps its text at the true size. If you draw a figure large and shrink it, its text shrinks as well.
+\input{generated/snip_size.tex}
+
+\paragraph{\texttt{transform} says what your data is in, and \texttt{projection} what the map is in.} This is the most common source of confusion. The map's projection is set once. Each thing you draw says which coordinates \emph{it} uses:
+\begin{lstlisting}[language=Python]
+ax = plt.axes(projection=carto.albers(85, 25, 45))         # the map
+ax.plot(lon, lat, transform=ccrs.PlateCarree())            # data in degrees
+ax.imshow(a, extent=box, transform=ccrs.UTM(42))           # data in UTM metres
+\end{lstlisting}
+\texttt{PlateCarree} here means ``plain longitude and latitude''. If you leave out \texttt{transform}, Cartopy assumes that the numbers are already in the map's projection, and your data lands in the wrong place or disappears.
+
+\section{The house style}
+\texttt{use\_style()} runs once at the top of a script. It sets fonts, line widths and export settings, so all figures in a project match.
+\input{generated/snip_use_style.tex}
+Three of its settings deserve a note. \texttt{pdf.fonttype=42} embeds real text, which journals ask for and which stays editable. \texttt{savefig.dpi=400} is above the common 300~dpi print requirement. \texttt{savefig.bbox="tight"} trims empty margins, so check the final size.
+
+\section{A minimal script}
+\begin{lstlisting}[language=Python]
+from research_helpers import carto
+import cartopy.crs as ccrs, geopandas as gpd
+
+carto.use_style()                                    # 1 style
+g = gpd.read_file("regions.geojson")                 # 2 data
+proj = carto.albers(85, 25, 45)                      # 3 projection
+fig, ax = carto.map_axes(proj, [60, 108, 22, 47])    # 4 frame, land, grid
+ax.add_geometries(g.geometry, ccrs.PlateCarree(),    # 5 subject
+                  facecolor=carto.QUALITATIVE[0], edgecolor="white", linewidth=0.2)
+carto.scale_bar(ax)                                  # 6 scale
+carto.finish_map(fig, "figures/map_regions",         # 7 checks and saves
+                 title="Regions", sources=["GMBA"], crs="Albers equal-area")
+\end{lstlisting}

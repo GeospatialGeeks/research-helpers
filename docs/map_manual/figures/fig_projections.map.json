@@ -1,0 +1,17 @@
+{
+ "title": "One region in three projections",
+ "sources": [
+  "GMBA Mountain Inventory v2",
+  "Natural Earth"
+ ],
+ "crs": "As labelled",
+ "scale_bar": "A comparison of shape only.",
+ "boundary_note": "",
+ "status": "final",
+ "note": "",
+ "files": [
+  "fig_projections.pdf",
+  "fig_projections.png",
+  "fig_projections.svg"
+ ]
+}

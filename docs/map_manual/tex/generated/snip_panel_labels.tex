@@ -1,0 +1,6 @@
+\snippetcaption{research\_helpers/carto.py, panel\_labels(), lines 81--83}
+\begin{lstlisting}[firstnumber=81]
+def panel_labels(axes, x=-0.02, y=1.03):
+    for i, ax in enumerate(axes):
+        ax.text(x, y, f"({chr(97 + i)})", transform=ax.transAxes, fontweight="bold", fontsize=9, va="bottom", ha="right")
+\end{lstlisting}

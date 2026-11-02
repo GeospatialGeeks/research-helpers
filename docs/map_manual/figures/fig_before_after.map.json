@@ -1,0 +1,17 @@
+{
+ "title": "Defaults and house style",
+ "sources": [
+  "GMBA Mountain Inventory v2",
+  "Natural Earth"
+ ],
+ "crs": "Plate carree, and Albers equal-area",
+ "scale_bar": "Panel (a) is an example of what to avoid.",
+ "boundary_note": "",
+ "status": "final",
+ "note": "",
+ "files": [
+  "fig_before_after.pdf",
+  "fig_before_after.png",
+  "fig_before_after.svg"
+ ]
+}

@@ -8,6 +8,7 @@ Needs the optional extra: pip install research-helpers[carto]
     carto.scale_bar(ax); carto.save(fig, "figures/map")
 """
 import json
+import textwrap
 from pathlib import Path
 
 import cartopy.crs as ccrs
@@ -143,3 +144,53 @@ def finish_map(fig, stem, *, title, sources, crs, scale_bar=True, boundary_note=
     record = dict(title=title, sources=list(sources), crs=crs, scale_bar=scale_bar, boundary_note=BOUNDARY_NOTE if boundary_note else "", status=status, note=note, files=[s.with_suffix(f".{f}").name for f in formats])
     s.with_suffix(".map.json").write_text(json.dumps(record, indent=1), encoding="utf8")
     return s
+
+
+def story_map(stem, projection, draw, *, title, subtitle, key=(), legend=(), method="", source="", author="", map_share=None, map_aspect=1.0, page=(1080, 1920), dpi=200):
+    """A map that explains itself on one page, for social media or a slide: title, map, numbered key, legend, method and source.
+
+    draw(ax, fig) adds the map content. key is [(number, name, what it shows)]. legend is [(colour, label)]. map_aspect is height over width.
+    The sizes suit a 1080 by 1920 story; pass page=(1080, 1350) for a portrait post.
+    """
+    w, h = page[0] / dpi, page[1] / dpi
+    fig = plt.figure(figsize=(w, h), facecolor="white")
+    margin = 0.045
+    fig.text(margin, 0.972, title, fontsize=15, fontweight="bold", va="top", color=INK, wrap=True)
+    n_title = title.count("\n") + 1
+    top = 0.972 - 0.031 * n_title
+    fig.text(margin, top, subtitle, fontsize=8.2, va="top", color="#444444", linespacing=1.25)
+    top -= 0.0175 * (subtitle.count("\n") + 1) + 0.012
+    map_h = (map_share if map_share else min((1 - 2 * margin) * w * map_aspect / h, 0.56))
+    ax = fig.add_axes([margin + 0.05, top - map_h, 1 - 2 * margin - 0.05, map_h], projection=projection)
+    draw(ax, fig)
+    y = top - map_h - 0.03
+    line = lambda size: size * 1.27 / 72 / h
+    if legend:
+        x = margin
+        for colour, label in legend:
+            fig.patches.append(plt.Rectangle((x, y - 0.012), 0.036, 0.014, transform=fig.transFigure, facecolor=colour, edgecolor="#555555", linewidth=0.3))
+            fig.text(x + 0.045, y - 0.005, label, fontsize=8, va="center", color=INK)
+            x += 0.06 + 0.0122 * len(label)
+        y -= 0.033
+    for number, name, what in key:
+        fig.text(margin + 0.016, y - 0.002, str(number), fontsize=8.5, fontweight="bold", ha="center", va="top", color="black", bbox=dict(boxstyle="circle,pad=0.22", facecolor="white", edgecolor="black", linewidth=0.5))
+        lines = textwrap.wrap(f"{name}: {what}", 62)
+        fig.text(margin + 0.052, y, "\n".join(lines), fontsize=8.8, va="top", color=INK, linespacing=1.2)
+        y -= line(8.8) * len(lines) + 0.011
+    y -= 0.006
+    for label, text in (("How it was made", method), ("Sources", source)):
+        if text:
+            fig.text(margin, y, label, fontsize=8.2, fontweight="bold", va="top", color=INK)
+            y -= line(8.2) + 0.002
+            lines = textwrap.wrap(text, 72)
+            fig.text(margin, y, "\n".join(lines), fontsize=8, va="top", color="#333333", linespacing=1.2)
+            y -= line(8) * len(lines) + 0.012
+    if y < 0.012:
+        raise ValueError(f"the page overflows by {0.012 - y:.3f}: shorten the text or the map")
+    if author:
+        fig.text(1 - margin, 0.012, author, fontsize=6.5, ha="right", color="#666666")
+    stem = Path(stem)
+    stem.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(stem.with_suffix(".png"), dpi=dpi, bbox_inches=None, facecolor="white")
+    plt.close(fig)
+    return stem

@@ -1,0 +1,17 @@
+\snippetcaption{research\_helpers/carto.py, save(), lines 86--99}
+\begin{lstlisting}[firstnumber=86]
+def save(fig, stem, formats=("pdf", "png", "svg"), meta=None):
+    """Save vector and raster copies, without a timestamp so that a rebuild of the same figure is byte-stable where possible."""
+    stem = Path(stem)
+    stem.parent.mkdir(parents=True, exist_ok=True)
+    for f in formats:
+        md = {"Title": stem.name, **(meta or {})}
+        if f == "pdf":
+            md["CreationDate"] = None
+        elif f == "svg":
+            md["Date"] = None
+        elif f == "png":
+            md = {"Title": stem.name}
+        fig.savefig(stem.with_suffix(f".{f}"), metadata=md)
+    return stem
+\end{lstlisting}

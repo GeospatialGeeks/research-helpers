@@ -1,0 +1,31 @@
+\chapter{What a map is made of}\label{ch:anatomy}
+
+A publishable map answers three questions at a glance: what is shown, where it is, and whether it can be trusted. Each part below serves one of these. Figure~\ref{fig:anatomy} has them all, and later chapters show the code for each.
+
+\begin{figure}[H]\centering\includegraphics[width=\linewidth]{map_anatomy.pdf}
+\caption{A complete map. Its code is in \texttt{src/make\_figures.py}, function \texttt{anatomy()}.}\label{fig:anatomy}\end{figure}
+
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\toprule
+Part & What it does & In code \\
+\midrule
+Map frame & Holds the data, and its border is called the neatline & \texttt{map\_axes()} \\
+Thematic layer & The subject itself: polygons, points or a raster & \texttt{add\_geometries()}, \texttt{imshow()} \\
+Base layer & Quiet land and sea that give context without competing & \texttt{map\_axes(land=True)} \\
+Graticule & Lines of latitude and longitude, with labels, that show location and projection & \texttt{map\_axes(grid=True)} \\
+Scale bar & Turns map distance into ground distance & \texttt{scale\_bar()} \\
+Legend & Explains colours and symbols & \texttt{ax.legend()} \\
+Locator inset & A small overview showing where the map sits & \texttt{locator()} \\
+Title or caption & States the subject; journals usually want it in the caption & \texttt{set\_title()}, LaTeX \\
+Credit & Names sources, as licences often require & \texttt{credit()} \\
+Projection note & Lets a reader judge distortion & Caption, \texttt{finish\_map()} \\
+Record & A file stating sources and projection, for repeating the work & \texttt{finish\_map()} \\
+\bottomrule
+\end{tabularx}
+
+\paragraph{North arrows.} We usually leave them out. On a conic projection, north differs across the map, so a single arrow is wrong in most places, and the graticule already shows direction. Use an arrow only on a large-scale map with no graticule.
+
+\paragraph{Hierarchy.} The eye should reach the data first and the furniture last. So base layers are pale, grid lines thin and grey, and text small. If your scale bar is what stands out, it is too heavy.
+
+\begin{figure}[H]\centering\includegraphics[width=\linewidth]{fig_before_after.pdf}
+\caption{The same data with defaults (a), and with the house style (b). Panel (a) distorts shape and hides the data behind its grid.}\end{figure}

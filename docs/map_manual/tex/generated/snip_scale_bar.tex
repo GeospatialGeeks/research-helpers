@@ -1,0 +1,8 @@
+\snippetcaption{research\_helpers/carto.py, scale\_bar(), lines 74--78}
+\begin{lstlisting}[firstnumber=74]
+def scale_bar(ax, location="lower left"):
+    """Scale bar in metres of the map's projection. It is true along the standard parallels only; say so in the caption."""
+    bar = ScaleBar(1, "m", location=location, frameon=True, box_color="white", box_alpha=0.8, font_properties={"size": 6.5}, length_fraction=0.18, width_fraction=0.008, color=INK, scale_loc="top")
+    ax.add_artist(bar)
+    return bar
+\end{lstlisting}

@@ -1,0 +1,18 @@
+\snippetcaption{research\_helpers/carto.py, finish\_map(), lines 131--145}
+\begin{lstlisting}[firstnumber=131]
+def finish_map(fig, stem, *, title, sources, crs, scale_bar=True, boundary_note=False, status="final", note="", formats=("pdf", "png", "svg")):
+    """The one exit for a map: it stops if basic elements are missing, and saves a record beside the map.
+
+    A map must name its sources and projection and either carry a scale bar or say why not. The record makes it findable and repeatable.
+    """
+    if not sources:
+        raise ValueError("a map must name its sources")
+    if not crs:
+        raise ValueError("a map must state its projection")
+    if scale_bar is not True and not isinstance(scale_bar, str):
+        raise ValueError("a map needs a scale bar, or a sentence saying why not")
+    s = save(fig, stem, formats, {"Title": title})
+    record = dict(title=title, sources=list(sources), crs=crs, scale_bar=scale_bar, boundary_note=BOUNDARY_NOTE if boundary_note else "", status=status, note=note, files=[s.with_suffix(f".{f}").name for f in formats])
+    s.with_suffix(".map.json").write_text(json.dumps(record, indent=1), encoding="utf8")
+    return s
+\end{lstlisting}

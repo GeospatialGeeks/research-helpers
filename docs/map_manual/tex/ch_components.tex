@@ -1,0 +1,58 @@
+\chapter{Each component, with its parameters}\label{ch:components}
+
+\section{The frame: \texttt{map\_axes()}}
+\input{generated/snip_map_axes.tex}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Parameter & Meaning \\
+\midrule
+\texttt{projection} & The map's projection \\
+\texttt{extent} & \texttt{[lon0, lon1, lat0, lat1]} in degrees, or \texttt{None} to set it later \\
+\texttt{width} & \texttt{"single"}, \texttt{"onehalf"} or \texttt{"double"} column, or inches \\
+\texttt{ratio} & Height as a share of width \\
+\texttt{ax} & Draw on an existing panel, for multi-panel figures. Nothing new is created \\
+\texttt{grid}, \texttt{land} & Turn the graticule or base layer off, as you may want over imagery \\
+\texttt{step} & Graticule spacing in degrees \\
+\bottomrule
+\end{tabularx}
+
+\section{The scale bar: \texttt{scale\_bar()}}
+\input{generated/snip_scale_bar.tex}
+Pass \texttt{location} as \texttt{"lower left"}, \texttt{"upper right"} and so on, and place it where data is absent. The white box keeps it readable over imagery. It reads in metres of the map's projection, so on a geographic axis, with units of degrees, it would be wrong: use a projected axes.
+
+\section{The inset: \texttt{locator()}}
+\input{generated/snip_locator.tex}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Parameter & Meaning \\
+\midrule
+\texttt{position} & \texttt{[left, bottom, width, height]} as shares of the figure, from 0 to 1 \\
+\texttt{extent} & The wider area the inset shows \\
+\texttt{box} & The main map's limits, drawn as an orange box \\
+\texttt{projection} & Defaults to plain latitude and longitude \\
+\bottomrule
+\end{tabularx}
+
+\medskip\noindent Place it over empty or unimportant ground, and always look at the result. Our first flood map hid a marked town under its inset, and a later version hid the axis labels. Positions are in figure units, so moving an inset can take a few tries.
+
+\section{Other parts}
+\input{generated/snip_credit.tex}
+\input{generated/snip_panel_labels.tex}
+
+\section{Legends}
+Cartopy polygons do not always appear in legends automatically, so make the handles yourself. For long legends, put them below the map, so that they do not cover data:
+\begin{lstlisting}[language=Python]
+handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in colours]
+ax.legend(handles, names, loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)
+\end{lstlisting}
+
+\section{Rasters}
+For a raster in another projection, warp it first, and then draw it. This gives you control over resampling, and avoids blurry or blocky results. Use nearest neighbour for classes, which must not be averaged, and bilinear for continuous data.
+\begin{lstlisting}[language=Python]
+transform, w, h = calculate_default_transform(src.crs, target, src.width, src.height, *src.bounds, resolution=1000)
+out = np.full((h, w), 255, dtype="uint8")
+reproject(src.read(1), out, src_transform=src.transform, src_crs=src.crs,
+          dst_transform=transform, dst_crs=target, resampling=Resampling.nearest)
+ax.imshow(out, extent=box, origin="upper", transform=ax.projection, interpolation="nearest")
+\end{lstlisting}
+Mind \textbf{nodata}. Our snow map once lost a whole class, because 0 was both a class and the file's nodata value. Reserve a value such as 255, and treat it explicitly.

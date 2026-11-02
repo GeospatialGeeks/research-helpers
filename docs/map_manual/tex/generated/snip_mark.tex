@@ -1,0 +1,9 @@
+\snippetcaption{research\_helpers/carto.py, mark(), lines 102--107}
+\begin{lstlisting}[firstnumber=102]
+def mark(ax, points, transform=None, size=7):
+    """Numbered markers with a halo, readable over any image. points is a list of (number, x, y); a caption or key explains them."""
+    transform = transform or ccrs.PlateCarree()
+    for n, x, y in points:
+        ax.text(x, y, str(n), transform=transform, ha="center", va="center", fontsize=size, fontweight="bold", color="black", zorder=20,
+                bbox=dict(boxstyle="circle,pad=0.25", facecolor="white", edgecolor="black", linewidth=0.5))
+\end{lstlisting}

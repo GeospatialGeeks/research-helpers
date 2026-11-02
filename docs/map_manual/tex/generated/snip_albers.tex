@@ -1,0 +1,7 @@
+\snippetcaption{research\_helpers/carto.py, albers(), lines 50--53}
+\begin{lstlisting}[firstnumber=50]
+def albers(central_lon, parallel_1, parallel_2, central_lat=None):
+    """Equal-area conic, the usual choice for mid-latitude regions wider than they are tall."""
+    lat = (parallel_1 + parallel_2) / 2 if central_lat is None else central_lat
+    return ccrs.AlbersEqualArea(central_longitude=central_lon, central_latitude=lat, standard_parallels=(parallel_1, parallel_2))
+\end{lstlisting}

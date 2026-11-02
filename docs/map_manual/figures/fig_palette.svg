@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="416.16pt" height="58.30848pt" viewBox="0 0 416.16 58.30848" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <title>fig_palette</title>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title>fig_palette</dc:title>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 58.30848 
+L 416.16 58.30848 
+L 416.16 -0 
+L 0 -0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 7.2 36.47232 
+L 57.42 36.47232 
+L 57.42 7.2 
+L 7.2 7.2 
+z
+" clip-path="url(#p62c095a088)" style="fill: #0072b2; stroke: #0072b2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 57.42 36.47232 
+L 107.64 36.47232 
+L 107.64 7.2 
+L 57.42 7.2 
+z
+" clip-path="url(#p62c095a088)" style="fill: #e69f00; stroke: #e69f00; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 107.64 36.47232 
+L 157.86 36.47232 
+L 157.86 7.2 
+L 107.64 7.2 
+z
+" clip-path="url(#p62c095a088)" style="fill: #009e73; stroke: #009e73; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 157.86 36.47232 
+L 208.08 36.47232 
+L 208.08 7.2 
+L 157.86 7.2 
+z
+" clip-path="url(#p62c095a088)" style="fill: #cc79a7; stroke: #cc79a7; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 208.08 36.47232 
+L 258.3 36.47232 
+L 258.3 7.2 
+L 208.08 7.2 
+z
+" clip-path="url(#p62c095a088)" style="fill: #56b4e9; stroke: #56b4e9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 258.3 36.47232 
+L 308.52 36.47232 
+L 308.52 7.2 
+L 258.3 7.2 
+z
+" clip-path="url(#p62c095a088)" style="fill: #d55e00; stroke: #d55e00; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 308.52 36.47232 
+L 358.74 36.47232 
+L 358.74 7.2 
+L 308.52 7.2 
+z
+" clip-path="url(#p62c095a088)" style="fill: #f0e442; stroke: #f0e442; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 358.74 36.47232 
+L 408.96 36.47232 
+L 408.96 7.2 
+L 358.74 7.2 
+z
+" clip-path="url(#p62c095a088)" style="stroke: #000000; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="32.31" y="43.7904" transform="rotate(-0 32.31 43.7904)">#0072B2</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="82.53" y="43.7904" transform="rotate(-0 82.53 43.7904)">#E69F00</text>
+   </g>
+   <g id="text_3">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="132.75" y="43.7904" transform="rotate(-0 132.75 43.7904)">#009E73</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="182.97" y="43.7904" transform="rotate(-0 182.97 43.7904)">#CC79A7</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="233.19" y="43.7904" transform="rotate(-0 233.19 43.7904)">#56B4E9</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="283.41" y="43.7904" transform="rotate(-0 283.41 43.7904)">#D55E00</text>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="333.63" y="43.7904" transform="rotate(-0 333.63 43.7904)">#F0E442</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 6px; font-family: 'Source Sans 3', 'Source Sans Pro', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle" x="383.85" y="43.7904" transform="rotate(-0 383.85 43.7904)">#000000</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p62c095a088">
+   <rect x="7.2" y="7.2" width="401.76" height="43.90848"/>
+  </clipPath>
+ </defs>
+</svg>
