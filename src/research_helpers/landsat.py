@@ -16,15 +16,19 @@ import ee
 COMMON = ["blue", "green", "red", "nir", "swir1", "swir2"]
 ROY_SLOPE = [0.8474, 0.8483, 0.9047, 0.8462, 0.8937, 0.9071]
 ROY_INTERCEPT = [0.0003, 0.0088, 0.0061, 0.0412, 0.0254, 0.0172]
+# Fitted here from near-same-day pairs in six High Mountain Asia and Indus areas (uib-snow-cover/src/19_fit_harmonisation.py).
+# Snow, cloud and bright pixels were excluded, so these do not hold for snow. Few pixels: 338 for ETM+, 921 for TM.
+HMA = {"LE07": ([0.8954, 0.9658, 0.9551, 1.0837, 0.9695, 0.9487], [-0.0194, -0.0133, -0.013, -0.0256, -0.0135, -0.0073]), "LT05": ([0.8669, 0.9101, 0.9377, 1.0376, 0.9347, 0.9161], [-0.0228, -0.0167, -0.0177, -0.0278, -0.0203, -0.0122]), "LT04": ([0.8669, 0.9101, 0.9377, 1.0376, 0.9347, 0.9161], [-0.0228, -0.0167, -0.0177, -0.0278, -0.0203, -0.0122])}
 SENSORS = {"LT04": ("LANDSAT/LT04/C02/T1_L2", 1982, 1993), "LT05": ("LANDSAT/LT05/C02/T1_L2", 1984, 2012), "LE07": ("LANDSAT/LE07/C02/T1_L2", 1999, 2022), "LC08": ("LANDSAT/LC08/C02/T1_L2", 2013, 2100), "LC09": ("LANDSAT/LC09/C02/T1_L2", 2021, 2100)}
 MSS = {"LM01": "LANDSAT/LM01/C02/T2", "LM02": "LANDSAT/LM02/C02/T2", "LM03": "LANDSAT/LM03/C02/T2", "LM04": "LANDSAT/LM04/C02/T2", "LM05": "LANDSAT/LM05/C02/T2"}
 
 
-def prepare(asset, region, start, end, harmonise=True, slope=None, intercept=None):
+def prepare(asset, region, start, end, harmonise=True, slope=None, intercept=None, coefficients="roy"):
     """One sensor, cloud-screened, as surface reflectance named by colour. Snow is kept, because it is often the subject."""
     oli = "LC0" in asset
     bands = ["SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B6", "SR_B7"] if oli else ["SR_B1", "SR_B2", "SR_B3", "SR_B4", "SR_B5", "SR_B7"]
-    sl, ic = slope or ROY_SLOPE, intercept or ROY_INTERCEPT
+    key = asset.split("/")[1]
+    sl, ic = HMA[key] if coefficients == "hma" and key in HMA else (slope or ROY_SLOPE, intercept or ROY_INTERCEPT)
 
     def one(i):
         clear = i.select("QA_PIXEL").bitwiseAnd(0b11010).eq(0)
