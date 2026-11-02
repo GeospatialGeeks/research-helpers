@@ -21,7 +21,7 @@ def _ascii(text):
 
 
 def _write(lines, first, label, out):
-    body = _ascii("\n".join(x[:108] for x in lines))
+    body = _ascii("\n".join(lines))
     head = rf"\snippetcaption{{{escape(label)}, lines {first}--{first + len(lines) - 1}}}"
     Path(out).parent.mkdir(parents=True, exist_ok=True)
     Path(out).write_text(f"{head}\n\\begin{{lstlisting}}[firstnumber={first}]\n{body}\n\\end{{lstlisting}}\n", encoding="utf8")
