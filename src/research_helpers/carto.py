@@ -105,7 +105,7 @@ def mark(ax, points, transform=None, size=7):
     transform = transform or ccrs.PlateCarree()
     for n, x, y in points:
         ax.text(x, y, str(n), transform=transform, ha="center", va="center", fontsize=size, fontweight="bold", color="black", zorder=20,
-                bbox=dict(boxstyle="circle,pad=0.25", facecolor="white", edgecolor="black", linewidth=0.5))
+                bbox=dict(boxstyle="circle,pad=0.25", facecolor="white", edgecolor="black", linewidth=0.5))._carto_mark = True
 
 
 def outlined(ax, x, y, text, transform=None, size=7, color="white"):
@@ -195,48 +195,102 @@ def story_map(stem, projection, draw, *, title, subtitle, key=(), legend=(), met
         fig.text(1 - margin, 0.008, author, fontsize=7, ha="right", color="#666666")
     stem = Path(stem)
     stem.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(stem.with_suffix(".png"), dpi=dpi, bbox_inches=None, facecolor="white")
-    fig.savefig(stem.with_suffix(".pdf"), dpi=dpi, bbox_inches=None, facecolor="white", metadata={"Title": title, "CreationDate": None})
-    fig.savefig(stem.with_suffix(".svg"), dpi=dpi, bbox_inches=None, facecolor="white", metadata={"Title": title, "Date": None})
-    _story_pptx(fig, stem, page, dpi)
+    with mpl.rc_context({"savefig.bbox": "standard"}):  # keep the exact page size; the house style otherwise trims margins
+        fig.savefig(stem.with_suffix(".png"), dpi=dpi, facecolor="white")
+        fig.savefig(stem.with_suffix(".pdf"), dpi=dpi, facecolor="white", metadata={"Title": title, "CreationDate": None})
+        fig.savefig(stem.with_suffix(".svg"), dpi=dpi, facecolor="white", metadata={"Title": title, "Date": None})
+        _story_pptx(fig, stem, page, dpi)
     plt.close(fig)
     return stem
 
 
 def _story_pptx(fig, stem, page, dpi):
-    """An editable slide: the map and legend swatches as one picture, and every piece of page text as its own text box."""
+    """An editable slide: the map as its own picture, and all text, markers, key circles and legend swatches as native shapes."""
+    from PIL import Image
     from pptx import Presentation
     from pptx.dml.color import RGBColor
+    from pptx.enum.shapes import MSO_SHAPE
+    from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
     from pptx.util import Emu, Pt
-    EMU = 914400 / dpi
     prs = Presentation()
-    prs.slide_width, prs.slide_height = Emu(int(page[0] * EMU)), Emu(int(page[1] * EMU))
+    W, H = int(page[0] * 914400 / dpi), int(page[1] * 914400 / dpi)
+    prs.slide_width, prs.slide_height = Emu(W), Emu(H)
     slide = prs.slides.add_slide(prs.slide_layouts[6])
-    texts = list(fig.texts)
-    for x in texts:
-        x.set_visible(False)
-    picture = stem.parent / f"{stem.name}_base.png"
-    fig.savefig(picture, dpi=dpi, bbox_inches=None, facecolor="white")
-    for x in texts:
-        x.set_visible(True)
-    slide.shapes.add_picture(str(picture), 0, 0, prs.slide_width, prs.slide_height)
+    fig.canvas.draw()
     renderer = fig.canvas.get_renderer()
-    scale = dpi / fig.dpi
+    fw, fh = fig.bbox.width, fig.bbox.height
+    rgb = lambda c: RGBColor(*[int(x * 255) for x in mpl.colors.to_rgb(c)])
+    main = fig.axes[0]
+    marks = [x for ax in fig.axes for x in ax.texts if getattr(x, "_carto_mark", False)]
+    texts, patches = list(fig.texts), list(fig.patches)
+    positions = [x.get_transform().transform(x.get_position()) for x in marks]
+    hidden = texts + patches + marks
+    for x in hidden:
+        x.set_visible(False)
+    full = stem.parent / f"{stem.name}_full.png"
+    fig.savefig(full, dpi=dpi, facecolor="white")
+    for x in hidden:
+        x.set_visible(True)
+    box = main.get_position()
+    im = Image.open(full)
+    cut = (0, int((1 - box.y1) * im.height), im.width, int((1 - box.y0) * im.height))
+    picture = stem.parent / f"{stem.name}_map.png"
+    im.crop(cut).save(picture)
+    im.close()
+    full.unlink()
+    slide.shapes.add_picture(str(picture), 0, int((1 - box.y1) * H), W, int((box.y1 - box.y0) * H))
+    picture.unlink()
+
+    def circle(cx, cy, label, size_pt):
+        d = int(size_pt * 1.75 * 12700)
+        s = slide.shapes.add_shape(MSO_SHAPE.OVAL, int(cx - d / 2), int(cy - d / 2), d, d)
+        s.fill.solid()
+        s.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        s.line.color.rgb = RGBColor(0, 0, 0)
+        s.line.width = Pt(0.5)
+        s.shadow.inherit = False
+        f = s.text_frame
+        f.margin_left = f.margin_right = f.margin_top = f.margin_bottom = 0
+        f.vertical_anchor = MSO_ANCHOR.MIDDLE
+        f.word_wrap = False
+        para = f.paragraphs[0]
+        para.alignment = PP_ALIGN.CENTER
+        run = para.add_run()
+        run.text = label
+        run.font.size, run.font.bold, run.font.name = Pt(size_pt), True, "Arial"
+        run.font.color.rgb = RGBColor(0, 0, 0)
+
+    for x, (px, py) in zip(marks, positions):
+        circle(px / fw * W, (1 - py / fh) * H, x.get_text(), x.get_fontsize())
+    for r in patches:
+        (x0, y0), rw, rh = r.get_xy(), r.get_width(), r.get_height()
+        s = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, int(x0 * W), int((1 - y0 - rh) * H), int(rw * W), int(rh * H))
+        s.fill.solid()
+        s.fill.fore_color.rgb = rgb(r.get_facecolor())
+        s.line.color.rgb = RGBColor(85, 85, 85)
+        s.line.width = Pt(0.3)
+        s.shadow.inherit = False
     for x in texts:
-        box = x.get_window_extent(renderer)
-        left, top = box.x0 * scale * EMU, (fig.bbox.height - box.y1) * scale * EMU
-        width = max(box.width * scale * EMU * 1.12, 300000)
-        tb = slide.shapes.add_textbox(Emu(int(left)), Emu(int(top)), Emu(int(width)), Emu(int(box.height * scale * EMU)))
+        e = x.get_window_extent(renderer)
+        if x.get_bbox_patch() is not None:
+            circle((e.x0 + e.x1) / 2 / fw * W, (1 - (e.y0 + e.y1) / 2 / fh) * H, x.get_text(), x.get_fontsize())
+            continue
+        left = int(e.x0 / fw * W)
+        right_aligned = x.get_ha() == "right"
+        width = min(int(e.width / fw * W * 1.15) + 60000, W - left - 40000) if not right_aligned else int(e.width / fw * W * 1.15)
+        if right_aligned:
+            left = int(e.x1 / fw * W) - width
+        tb = slide.shapes.add_textbox(left, int((1 - e.y1 / fh) * H), width, int(e.height / fh * H))
         f = tb.text_frame
         f.margin_left = f.margin_right = f.margin_top = f.margin_bottom = 0
-        f.word_wrap = False
-        for i, s in enumerate(x.get_text().split("\n")):
+        f.word_wrap = True
+        for i, line in enumerate(x.get_text().split("\n")):
             para = f.paragraphs[0] if i == 0 else f.add_paragraph()
+            para.alignment = PP_ALIGN.RIGHT if right_aligned else PP_ALIGN.LEFT
             run = para.add_run()
-            run.text = s
+            run.text = line
             run.font.size = Pt(x.get_fontsize())
             run.font.bold = x.get_fontweight() == "bold"
             run.font.name = "Arial"
-            r, g, b = [int(c * 255) for c in mpl.colors.to_rgb(x.get_color())]
-            run.font.color.rgb = RGBColor(r, g, b)
+            run.font.color.rgb = rgb(x.get_color())
     prs.save(stem.with_suffix(".pptx"))
