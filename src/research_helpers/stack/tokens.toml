@@ -1,0 +1,21 @@
+# One place for the look of everything. PDF and web both read this file.
+[colour]
+ink = "222222"
+accent = "1F5C7A"
+accent_dark = "7FB8D6"
+muted = "5F6B73"
+code_bg = "F5F6F7"
+rule = "C8CED6"
+
+[spacing]
+# in em, so they scale with the type
+section_before = 1.6
+section_after = 0.6
+subsection_before = 1.2
+subsection_after = 0.4
+paragraph = 0.5
+line = 1.12
+
+[type]
+code_size_pdf = "scriptsize"
+body_web = "0.95rem"

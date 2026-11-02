@@ -1,0 +1,20 @@
+name = "demo"
+title = "Rainfall and river level at one gauge"
+subtitle = "An example of one source built several ways"
+author = "A. Author"
+layouts = ["elsevier", "elsevier-print", "ieee", "manual", "report"]
+source = "tex"
+body = "body"
+chapters = ["ch_one"]
+abstract = "abstract"
+bibliography = "refs.bib"
+keywords = ["example", "layout"]
+[[authors]]
+name = "A. Author"
+affiliation = "Example University"
+email = "author@example.org"
+corresponding = true
+[web]
+site_name = "Demo guide"
+pdf_name = "demo_guide.pdf"
+intro = "This small project exists to show the layouts. Its text and numbers are invented for that purpose."

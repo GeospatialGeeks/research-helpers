@@ -6,3 +6,6 @@ build/
 dist/
 .pytest_cache/
 _archive/
+examples/demo/build/
+examples/demo/snapshots/
+web_figs.*

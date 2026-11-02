@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "research-helpers"
-version = "0.5.0"
+version = "0.6.0"
 description = "Everyday helpers for reproducible research: verified references, open-access full texts, LaTeX to Word, safe file writing, data registers, results tables, spatial cross-validation, job queues and literature-review screening."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -32,3 +32,6 @@ Homepage = "https://github.com/GeospatialGeeks/research-helpers"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+research_helpers = ["stack/latex/*", "stack/*.toml", "stack/*.css", "stack/*.js"]

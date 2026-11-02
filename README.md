@@ -118,3 +118,23 @@ Copyright © Ahmad Ammar. Developed during a PhD at Ulster University, supported
 ## Licence
 
 MIT (see [LICENSE](LICENSE)). The methods implemented are credited in each guide; please cite the original papers when you use them.
+
+## One source, every layout
+
+`research_helpers.stack` builds a project from LaTeX to PDF and to a website with one command. It adds a thin layer over latexmk, Pandoc, PDF.js and [Zensical](https://zensical.org), and it does not change your source files. A `document.toml` beside the source names the title, authors, chapters and layouts.
+
+```
+python -m research_helpers.stack layouts            # list what can be built
+python -m research_helpers.stack pdf examples/demo  # one PDF per layout
+python -m research_helpers.stack web examples/demo  # chapters, one long page, PDF reader
+python -m research_helpers.stack check examples/demo     # file names and missing files
+python -m research_helpers.stack snapshot examples/demo  # dated pictures of every output
+```
+
+Moving a paper to IEEE format means asking for the layout: `stack pdf . ieee`. A required template, such as a thesis class, stays as it is and is built with the `own` layout. Spacing and colours are set once in `stack/tokens.toml`, which both the PDF style and the web style read, so a change there reaches every project at the next build.
+
+| IEEE | Two-column Elsevier | Manual | Web page |
+|---|---|---|---|
+| ![IEEE layout](docs/stack/demo_ieee-1.png) | ![Elsevier print layout](docs/stack/demo_elsevier-print-1.png) | ![Manual layout](docs/stack/demo_manual-1.png) | ![Web page](docs/stack/demo_web_ch-one_desktop.png) |
+
+These pictures come from `examples/demo`, whose text is a placeholder.
