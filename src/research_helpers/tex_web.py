@@ -48,6 +48,7 @@ class Project:
     description: str = "{label}"
     dpi: int = 130
     job: str = "web_figs"
+    to: str = ""                    # pandoc output format, when a site builder needs another
 
 
 def read(path):
@@ -56,6 +57,23 @@ def read(path):
 
 def strip_comments(s):
     return re.sub(r"(?m)(?<!\\)%.*$", "", s)
+
+
+CODE = re.compile(r"\\begin\{(lstlisting|verbatim)\}.*?\\end\{\1\}", re.S)
+SHIELD = re.compile(r"SHIELD([0-9a-f]+)ENDS")
+
+
+def protect(s):
+    """Hide code blocks, whose text may look like LaTeX commands or comments, from the steps that follow."""
+    return CODE.sub(lambda m: "SHIELD" + m[0].encode("utf8").hex() + "ENDS", s)
+
+
+def unprotect(s):
+    return SHIELD.sub(lambda m: bytes.fromhex(m[1]).decode("utf8"), s)
+
+
+def load(path):
+    return strip_comments(protect(read(path)))
 
 
 def close_brace(s, i):
@@ -98,8 +116,8 @@ def expand(s, project):
         target = name if name.endswith(".tex") else name + ".tex"
         for base in [project.root, *project.search]:
             if (Path(base) / target).exists():
-                return expand(strip_comments(read(Path(base) / target)), project)
-        return expand(strip_comments(read((Path(project.root) / target).resolve())), project)
+                return expand(load(Path(base) / target), project)
+        return expand(load((Path(project.root) / target).resolve()), project)
     return re.sub(r"\\input\{([^}]+)\}", rep, s)
 
 
@@ -183,7 +201,7 @@ def build_figures(project):
     doc.append(r"\makeatother")
     count = 0
     for chapter in project.chapters:
-        s = expand(strip_comments(read(chapter.path)), project)
+        s = expand(load(chapter.path), project)
         doc.append(top_defs(FIGURE.sub("", s), project))
         for body, _, _ in split_figures(s, project)[1]:
             doc.append(r"\begin{preview}\begin{minipage}{\textwidth}\captionsetup{type=figure}\centering" + "\n" + body + "\n" + r"\end{minipage}\end{preview}")
@@ -212,10 +230,10 @@ def token(label):
 def to_markdown(tex, project, page_of, numbers):
     """LaTeX to Markdown through pandoc, with citations; cross-references become links."""
     pandoc = shutil.which("pandoc")
-    args = [pandoc, "-f", "latex", "-t", PANDOC_TO, "--wrap=none"]
+    args = [pandoc, "-f", "latex", "-t", project.to or PANDOC_TO, "--wrap=none"]
     if project.bibliography:
         args += ["--citeproc", f"--bibliography={project.bibliography}"] + ([f"--csl={project.csl}"] if project.csl else [])
-    r = subprocess.run(args, input=(project.macros + tex).encode("utf8"), capture_output=True)
+    r = subprocess.run(args, input=(project.macros + unprotect(tex)).encode("utf8"), capture_output=True)
     if r.returncode:
         raise RuntimeError(r.stderr.decode("utf8", "replace")[:800])
 
@@ -229,6 +247,8 @@ def to_markdown(tex, project, page_of, numbers):
 def prepare(s, chapter, numbers, project):
     """Rewrite chapter LaTeX into a form pandoc reads faithfully."""
     s = s.replace("\\thechapter", chapter)
+    # a footnote giving a link's address is for printed copies; on the web the link itself is enough
+    s = re.sub(r"(\\href\{[^{}]*\}\{(?:[^{}]|\{[^{}]*\})*\})\\footnote\{\\texttt\{[^{}]*\}\}", r"\1", s)
     s = re.sub(r"\\input\{[^}]*\}", "", s)
 
     def listing(m):
@@ -299,7 +319,7 @@ def finish(md):
         t = re.sub(r"\\ensuremath\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", m[2])
         t = re.sub(r"\$\^\{\\circ\}\\mathrm\{C\}\$", "\u00b0C", t)
         t = re.sub(r"\$([^$]*)\$", r"\\(\1\\)", t).replace("**", "")
-        return f'<div class="box box-{m[1]}"><p class="box-title">{t}</p>\n'
+        return f'<div class="box box-{m[1]}" markdown="1"><p class="box-title">{t}</p>\n'
     md = re.sub(r"BOXOPEN(\w+?)BOXT (.*?)\s*BOXTEND", box, md, flags=re.S)
     md = md.replace("\\begin{equation*}", "").replace("\\end{equation*}", "")
     inner = r"((?:[^{}]|\{[^{}]*\})*?)"
@@ -316,7 +336,7 @@ def build_pages(project):
     numbers = labels(project.aux)
     page_of, texts = {}, {}
     for chapter in project.chapters:
-        s = expand(strip_comments(read(chapter.path)), project)
+        s = expand(load(chapter.path), project)
         for key in re.findall(r"\\label\{([^}]+)\}", s):
             page_of[key] = chapter.slug
         texts[chapter.slug] = s

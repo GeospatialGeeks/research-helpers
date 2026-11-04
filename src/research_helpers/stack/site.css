@@ -10,3 +10,6 @@
 .md-typeset thead tr:not(:has(th:not(:empty))){display:none}
 mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%}
 .rh-pdf canvas{display:block;width:100%;height:auto;margin:0 0 12px;background:#fff;border:1px solid var(--md-default-fg-color--lightest)}
+.box{border-left:4px solid var(--md-primary-fg-color);background:var(--md-code-bg-color);padding:.6em 1em;margin:1em 0;border-radius:3px}
+.box-title{font-weight:700;margin-top:0}
+.box-care{border-left-color:#b45309}.box-answer{border-left-color:#15803d}

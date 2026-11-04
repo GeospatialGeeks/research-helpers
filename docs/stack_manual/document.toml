@@ -1,0 +1,10 @@
+name = "stack_manual"
+title = "One source, every output"
+subtitle = "How documents and sites are built and versioned with research-helpers"
+author = "Ahmad Ammar"
+layouts = ["manual"]
+source = "tex"
+chapters = ["ch_use", "ch_rules"]
+[web]
+site_name = "One source, every output"
+intro = "How one LaTeX source becomes PDFs and a website, and the rules that keep every project consistent."

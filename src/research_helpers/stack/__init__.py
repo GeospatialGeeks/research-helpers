@@ -38,9 +38,12 @@ HERE = Path(__file__).parent
 LATEX = HERE / "latex"
 TEMPLATES = Path(os.environ.get("RH_TEMPLATES", Path.home() / "research-templates"))
 
+SNIPPET = "\\newcommand{\\snippetcaption}[1]{\\textbf{From the code:} \\texttt{#1}}"
+PANDOC_SITE = ("markdown-smart-raw_tex-raw_attribute+tex_math_dollars-fenced_divs-bracketed_spans-native_divs-native_spans"
+               "+pipe_tables-grid_tables-simple_tables-multiline_tables-fenced_code_attributes")
 PACKAGES = r"\usepackage[T1]{fontenc}" + "\n" + r"\usepackage{lmodern,xurl}" + "\n"
 BOOK = PACKAGES + "\\usepackage[margin=24mm]{geometry}\n\\usepackage{rhcommon}\n\\usepackage[authoryear,round]{natbib}\n"
-PAPER = PACKAGES + "\\usepackage{amsmath,amssymb,booktabs,graphicx,float,listings,tabularx}\n\\usepackage[hidelinks]{hyperref}\n\\newcommand{\\snippetcaption}[1]{\\texttt{#1}}\n"
+PAPER = PACKAGES + "\\usepackage{amsmath,amssymb,booktabs,graphicx,float,listings,tabularx}\n\\usepackage[hidelinks]{hyperref}\n\\providecommand{\\snippetcaption}[1]{\\texttt{#1}}\n"
 ARTICLE_TOKENS = "\\usepackage[margin=25mm]{geometry}\n\\usepackage{rhcommon}\n\\usepackage[authoryear,round]{natbib}\n"
 
 
@@ -115,6 +118,43 @@ def _book(style, klass="report"):
     return make
 
 
+BOOK_LAYOUTS = ("manual", "pamphlet", "report")
+
+
+def _derive(d):
+    """Read title, abstract, body, bibliography and macros from the manuscript's own main file, without changing it."""
+    from .. import tex_web as T
+    root = d["_src"]
+    s = T.read(root / d["derive"])
+    pre, _, rest = s.partition("\\begin{document}")
+    d.setdefault("title", re.sub(r"\s+", " ", T.command_arg(rest, "title")[2] if T.command_arg(rest, "title") else (T.command_arg(pre, "title") or (0, 0, d["name"]))[2]))
+    ab = re.search(r"\\begin\{abstract\}(.*?)\\end\{abstract\}", rest, re.S)
+    gen = d["_root"] / "build/derived"
+    gen.mkdir(parents=True, exist_ok=True)
+    (gen / "abstract_derived.tex").write_text(ab[1] if ab else "", encoding="utf8")
+    start = rest.find("\\end{frontmatter}")
+    start = start + len("\\end{frontmatter}") if start >= 0 else (ab.end() if ab else (rest.find("\\maketitle") + len("\\maketitle")))
+    ends = [i for i in (rest.find("\\bibliographystyle"), rest.find("\\end{document}")) if i >= 0]
+    body = re.sub(r"\\begin\{IEEEkeywords\}.*?\\end\{IEEEkeywords\}", "", rest[start:min(ends)], flags=re.S)
+    (gen / "body_derived.tex").write_text(body, encoding="utf8")
+    d["abstract"], d["body"] = "abstract_derived", "body_derived"
+    bib = re.search(r"\\bibliography\{([^}]+)\}", rest)
+    if bib and not d.get("bibliography"):
+        d["bibliography"] = bib[1].split(",")[0].strip() + ".bib"
+    if "authors" not in d:
+        names = re.findall(r"\\author(?:\[[^\]]*\])?\{([^{}]+)", rest + pre)
+        d["authors"] = [dict(name=re.sub(r"\\[a-zA-Z]+", "", n).strip()) for n in names] or [dict(name="Author")]
+    keep = [pre[a:b] for a, b in T.def_spans(pre)]
+    skip = {"natbib", "hyperref", "geometry", "fontspec", "fontenc", "inputenc", "lmodern", "mathptmx", "times", "babel", "titlesec", "fancyhdr", "authblk", "cite", "newtxtext", "newtxmath"}
+    for m in re.finditer(r"\\usepackage(\[[^\]]*\])?\{([^}]+)\}", pre):
+        wanted = [x.strip() for x in m[2].split(",") if x.strip() not in skip]
+        if wanted:
+            keep.append(f"\\usepackage{m[1] or ''}{{{','.join(wanted)}}}")
+    keep += [x for x in pre.splitlines() if re.match(r"\s*\\(DeclareMathOperator|newcolumntype|input|graphicspath)\b", x) and not any(Path(v).name in x for v in d.get("defines", []))]
+    d["_derived_preamble"] = keep
+    d["_gen"] = gen
+
+
 LAYOUTS = {
     "elsevier": (lambda d: _elsevier("preprint,12pt,authoryear", d), "Journal review copy, single column", ["elsarticle"]),
     "elsevier-print": (lambda d: _elsevier("final,5p,times,twocolumn,authoryear", d), "Two columns, as it would look in print", ["elsarticle"]),
@@ -160,6 +200,8 @@ def pdf(project, *wanted):
     """Write a thin wrapper for each layout and compile it. The project's own files are only read."""
     d = load(project)
     results = {}
+    if d.get("derive"):
+        _derive(d)
     for name in wanted or d.get("layouts", ["manual"]):
         make, _, templates = LAYOUTS[name]
         out = d["_root"] / "build" / name
@@ -176,24 +218,36 @@ def pdf(project, *wanted):
         extra = [f"\\graphicspath{{{d['_graphics']}}}"]
         src = d["_src"]
         extra += [f"\\input{{{v}}}" for v in d.get("defines", [])]
+        extra += d.get("_derived_preamble", [])
+        if name in BOOK_LAYOUTS:
+            extra.append(f"\\lstset{{inputpath={{{src.as_posix()}}}}}")
+        engine = d.get("engine", "xelatex" if name in BOOK_LAYOUTS else "pdflatex")
+        if engine == "xelatex" and name in BOOK_LAYOUTS:
+            ty = tokens()["type"]
+            extra.insert(0, f"\\setmainfont{{{ty['font_main']}}}\\setmonofont{{{ty['font_mono']}}}")
         d["_extra"] = "\n".join(extra) + "\n"
         parts = d.get("chapters") if name == "manual" and d.get("chapters") else [d["body"]] if d.get("body") else d.get("chapters", ["body"])
         d["_body"] = "\n".join(f"\\input{{{c}}}" for c in parts)
         bibfile = d.get("bibliography")
         if bibfile:
-            shutil.copy2(src / bibfile, out / bibfile)
+            shutil.copy2(src / bibfile, out / Path(bibfile).name)
             d["_bib"] = lambda style, b=bibfile: f"\\bibliographystyle{{{style}}}\n\\bibliography{{{Path(b).stem}}}"
         else:
             d["_bib"] = lambda style: ""
-        (out / "main.tex").write_text(make(d), encoding="utf8")
-        env = dict(os.environ, TEXINPUTS=os.pathsep.join([str(out), str(src), ""]))
-        run = lambda *c: subprocess.run(c, cwd=out, capture_output=True, env=env)
+        text = make(d)
+        if engine == "xelatex":
+            text = text.replace("\\usepackage[T1]{fontenc}\n\\usepackage{lmodern,xurl}", "\\usepackage{fontspec,xurl}")
+        (out / "main.tex").write_text(text, encoding="utf8")
+        env = dict(os.environ, TEXINPUTS=os.pathsep.join([str(out), str(src), str(d.get("_gen", src)), *[str((src / x).resolve()) for x in d.get("shared", [])], ""]))
+        # LaTeX runs from the source folder, so a manuscript's relative paths to figures keep working
+        rel = os.path.relpath(out, src).replace(os.sep, "/")
+        tex = lambda: subprocess.run([engine, "-interaction=nonstopmode", f"-output-directory={rel}", f"{rel}/main.tex"], cwd=src, capture_output=True, env=env)
         for _ in range(2):
-            run("pdflatex", "-interaction=nonstopmode", "main.tex")
+            tex()
         if bibfile:
-            run("bibtex", "main")
-            run("pdflatex", "-interaction=nonstopmode", "main.tex")
-        run("pdflatex", "-interaction=nonstopmode", "main.tex")
+            subprocess.run(["bibtex", "main"], cwd=out, capture_output=True, env=env)
+            tex()
+        tex()
         log = (out / "main.log").read_text(encoding="latin1", errors="replace")
         errors = sorted(set(re.findall(r"^! .*", log, re.M)))[:6]
         final = d["_root"] / "build" / f"{d['name']}_{name}.pdf"
@@ -207,8 +261,21 @@ def pdf(project, *wanted):
 def _own(d, out):
     """Compile the project's own driver, leaving its files in place and its by-products in build/own."""
     main = d.get("main", "main.tex")
-    subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", f"-outdir={out}", main], cwd=d["_src"], capture_output=True)
+    if d.get("command"):    # a project with its own multi-stage build, which already writes beside its source
+        subprocess.run([sys.executable if c == "python" else c for c in d["command"]], cwd=d["_src"], capture_output=True)
+        stem = Path(main).stem
+        for suffix in (".pdf", ".aux", ".log"):
+            if (d["_src"] / (stem + suffix)).exists():
+                shutil.copy2(d["_src"] / (stem + suffix), out / (stem + suffix))
+    uses_xe = d.get("engine") == "xelatex" or any("fontspec" in f.read_text(encoding="utf8", errors="replace") for f in [*d["_src"].glob("*.tex"), *d["_src"].glob("*.sty"), *d["_src"].glob("*.cls")])
+    if not d.get("command"):
+        subprocess.run(["latexmk", "-xelatex" if uses_xe else "-pdf", "-interaction=nonstopmode", f"-outdir={out}", main], cwd=d["_src"], capture_output=True)
     made = out / (Path(main).stem + ".pdf")
+    xdv = out / (Path(main).stem + ".xdv")
+    if xdv.exists():
+        # from the source folder, so that pictures named relative to the source are found
+        rel = os.path.relpath(out, d["_src"]).replace(os.sep, "/")
+        subprocess.run(["xdvipdfmx", "-o", f"{rel}/{made.name}", f"{rel}/{xdv.name}"], cwd=d["_src"], capture_output=True)
     final = d["_root"] / "build" / f"{d['name']}_own.pdf"
     if made.exists():
         shutil.copy2(made, final)
@@ -217,29 +284,131 @@ def _own(d, out):
     return dict(pdf=str(final) if made.exists() else None, errors=errors, undefined=[])
 
 
-def web(project, source_pdf=None, build=True):
+def _project_from_module(d, spec):
+    """Use a project's own tex_web settings, for books with their own discovery of chapters."""
+    import importlib.util
+    file, attr = spec.split(":")
+    sp = importlib.util.spec_from_file_location("rh_web_project", d["_src"] / file)
+    mod = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(mod)
+    return getattr(mod, attr)
+
+
+def _aux(d):
+    first = d["layouts"][0]
+    if first == "own":
+        return d["_root"] / "build/own" / (Path(d.get("main", "main.tex")).stem + ".aux")
+    return d["_root"] / "build" / first / "main.aux"
+
+
+def web(project, build=True):
     """Chapters, one long page and an embedded PDF, as a Zensical site in build/site."""
     from .. import tex_web as T
     d = load(project)
     w = d.get("web", {})
     root, src = d["_root"], d["_src"]
-    aux_dir = root / "build" / d["layouts"][0]
     docs = root / "build/site_src"
-    if docs.exists():
-        shutil.rmtree(docs)
-    (docs / "fig").mkdir(parents=True)
-    defines = d.get("defines", [])
-    macros = "".join((src / (m if m.endswith(".tex") else m + ".tex")).read_text(encoding="utf8") + "\n" for m in defines) + "\\newcommand{\\snippetcaption}[1]{\\textbf{From the code:} \\texttt{#1}}\n"
-    project_web = T.Project(
-        root=src, aux=aux_dir / "main.aux", url="/", out=docs, figures=docs / "fig",
-        chapters=[T.Chapter(c.replace("_", "-"), src / f"{c}.tex") for c in d["chapters"]],
-        preamble=["\\documentclass[11pt,a4paper]{article}", "\\usepackage[T1]{fontenc}", "\\usepackage{lmodern,caption,amsmath,graphicx,booktabs,xcolor,listings,float,tabularx}", "\\usepackage[margin=24mm]{geometry}", f"\\graphicspath{{{{{(root / d.get('figures', 'figures')).as_posix()}/}}}}", *[f"\\input{{{m}}}" for m in defines], "\\newcommand{\\snippetcaption}[1]{\\textbf{From the code:} \\texttt{#1}}"],
-        macros=macros, search=[src], definition_inputs=tuple(Path(m).name for m in defines), inline_generated=tuple(w.get("inline", ["snip_", "table_"])),
-        description="{label}: " + d["title"], index_head=["---", f"title: {d['title']}", "slug: index", "---", "", w.get("intro", d.get("subtitle", "")), ""],
-    )
-    print("figures", T.build_figures(project_web), flush=True)
-    T.build_pages(project_web)
+    _empty(docs)
+    (docs / "fig").mkdir(parents=True, exist_ok=True)
+    front = ["---", f"title: {json_str(d['title'])}", "slug: index", "---", ""]
+    if w.get("intro_tex"):
+        front.append(_tex_to_md(src / w["intro_tex"]))
+    else:
+        front.append(w.get("intro", d.get("subtitle", "")))
+    front.append("")
+    if w.get("project"):
+        p = _project_from_module(d, w["project"])
+        p.url, p.out, p.figures, p.to = "/", docs, docs / "fig", PANDOC_SITE
+        if w.get("intro") or w.get("intro_tex"):
+            p.index_head = front
+        if _aux(d).exists():
+            p.aux = _aux(d)
+    else:
+        defines = d.get("defines", [])
+        macros = "".join((src / (m if m.endswith(".tex") else m + ".tex")).read_text(encoding="utf8") + "\n" for m in defines) + SNIPPET + "\n"
+        slugs = w.get("slugs", {})
+        p = T.Project(
+            root=src, aux=_aux(d), url="/", out=docs, figures=docs / "fig", to=PANDOC_SITE,
+            chapters=[T.Chapter(slugs.get(c, c.replace("_", "-")), src / f"{c}.tex") for c in d["chapters"]],
+            preamble=["\\documentclass[11pt,a4paper]{report}", "\\usepackage[T1]{fontenc}", "\\usepackage{lmodern,caption,amsmath,graphicx,booktabs,xcolor,listings,float,tabularx}", "\\usepackage[margin=24mm]{geometry}", f"\\graphicspath{{{{{(root / d.get('figures', 'figures')).as_posix()}/}}}}", *[f"\\input{{{m}}}" for m in defines], SNIPPET],
+            macros=macros, search=[src, *[(src / x).resolve() for x in d.get("shared", [])]], definition_inputs=tuple(Path(m).name for m in defines), inline_generated=tuple(w.get("inline", ["snip_", "table_"])),
+            description="{label}: " + d["title"], index_head=front,
+        )
+    print("figures", T.build_figures(p)[:2], flush=True)
+    T.build_pages(p)
     return _site(d, docs, build)
+
+
+def _empty(folder):
+    """Remove a folder's contents. Sync tools such as OneDrive can lock a folder itself, so a locked folder is kept
+    empty instead of removed."""
+    if not folder.exists():
+        return
+    for f in sorted(folder.rglob("*"), key=lambda x: len(x.parts), reverse=True):
+        try:
+            f.unlink() if f.is_file() else f.rmdir()
+        except OSError:
+            pass
+
+
+def _tex_to_md(path):
+    tex = Path(path).read_text(encoding="utf8")
+    tex = re.sub(r"(\\href\{[^{}]*\}\{(?:[^{}]|\{[^{}]*\})*\})\\footnote\{\\texttt\{[^{}]*\}\}", r"\1", tex)
+    r = subprocess.run([shutil.which("pandoc"), "-f", "latex", "-t", PANDOC_SITE, "--wrap=none"], input=tex.encode("utf8"), capture_output=True)
+    return r.stdout.decode("utf8").replace("\r\n", "\n")
+
+
+def deploy(project, dest):
+    """Copy the built site into a larger site. Files already there that the build does not make are kept."""
+    d = load(project)
+    site = d["_root"] / "build/site"
+    shutil.copytree(site, dest, dirs_exist_ok=True)
+    print("deployed", dest, flush=True)
+
+
+def from_markdown(folder, dest, code_root="."):
+    """One-time move of a Markdown guide (NN-slug.md with front matter) to LaTeX chapters. Writes only into dest."""
+    folder, dest = Path(folder), Path(dest)
+    dest.mkdir(parents=True, exist_ok=True)
+    chapters = {}
+    for path in sorted(folder.glob("[0-9]*.md")):
+        _, head, body = path.read_bytes().decode("utf8").replace("\r\n", "\n").split("---\n", 2)
+        meta = dict(x.split(": ", 1) for x in head.strip().splitlines() if ": " in x)
+        title, slug = meta["title"].strip('"'), meta["slug"]
+        blocks = []
+
+        def stash(tex):
+            blocks.append(tex)
+            return f"CODEBLOCK{len(blocks) - 1}END"
+
+        body = re.sub(r"(?m)^!include (\S+) (\w+)$", lambda m: f"**{Path(m[1]).name}**\n\n" + stash(f"\\lstinputlisting{{{code_root}/{m[1]}}}"), body)
+
+        def fence(m):
+            lang, code = m[3].strip().split(" ")[0], m[4]
+            pad = m[1]
+            code = "\n".join(x[len(pad):] if x.startswith(pad) else x for x in code.split("\n"))
+            opt = f"[language={lang}]" if lang else ""
+            return pad + stash(f"\\begin{{lstlisting}}{opt}\n{code}\n\\end{{lstlisting}}")
+        body = re.sub(r"(?ms)^([ \t]*)(`{3,})([^\n`]*)\n(.*?)\n[ \t]*\2[ \t]*$", fence, body)
+        r = subprocess.run([shutil.which("pandoc"), "-f", "markdown-smart", "-t", "latex", "--wrap=none", "--shift-heading-level-by=-1", f"--id-prefix={slug}-"], input=body.encode("utf8"), capture_output=True, check=True)
+        tex = r.stdout.decode("utf8").replace("\r\n", "\n")
+        tex = re.sub(r"\\pandocbounded\{\\includegraphics(?:\[[^\]]*\])?\{([^}]*)\}\}", r"\\includegraphics[width=\\linewidth]{\1}", tex)
+        parts = re.split(r"(\\begin\{figure\}.*?\\end\{figure\})", tex, flags=re.S)
+        tex = "".join(x if x.startswith("\\begin{figure}") else re.sub(r"(\\includegraphics\[[^\]]*\]\{[^}]*\})", r"\\begin{figure}[H]\\centering \1\\end{figure}", x) for x in parts)
+        tex = re.sub(r"CODEBLOCK(\d+)END", lambda m: blocks[int(m[1])], tex)
+        name = "intro" if slug == "index" else slug.replace("-", "_")
+        head_tex = "" if slug == "index" else f"\\chapter{{{title}}}\n\\label{{ch:{slug}}}\n\n"
+        (dest / f"{name}.tex").write_text(head_tex + tex + "\n", encoding="utf8", newline="\n")
+        if slug != "index":
+            chapters[name] = slug
+    return chapters
+
+
+def site_css():
+    """The shared web style with this installation's tokens filled in."""
+    t = tokens()
+    head = ":root{" + "".join(f"--rh-{k.replace('_', '-')}:{v};" for k, v in t["spacing"].items()) + f"--rh-body:{t['type']['body_web']}" + "}\n"
+    return head + (HERE / "site.css").read_text(encoding="utf8").replace("TOKEN_ACCENT_DARK", t["colour"]["accent_dark"]).replace("TOKEN_ACCENT", t["colour"]["accent"])
 
 
 def _front(text):
@@ -250,8 +419,22 @@ def _clean(text):
     """What Zensical needs: display maths on its own lines, and links and pictures relative to the site."""
     text = re.sub(r"\s*\$\$(.+?)\$\$\s*", lambda m: "\n\n$$\n" + m[1].strip() + "\n$$\n\n", text, flags=re.S)
     text = re.sub(r"\]\(/fig/", "](fig/", text)
-    text = re.sub(r"\]\(/([a-z0-9-]+)/#", r"](\1.md#", text)
-    return re.sub(r"\]\(/([a-z0-9-]+)/\)", r"](\1.md)", text)
+    return text
+
+
+def _local_links(text, slugs, parent, site=""):
+    """Links written for the old one-folder-per-page site, made into links between the Markdown pages: slug/ and
+    ../slug/ point at a page of this guide, and ../../name/ at another guide beside it under parent."""
+    def page(m):
+        up, slug, anchor = m[1], m[2], m[3] or ""
+        if slug in slugs or slug in ("full", "pdf"):
+            return f"]({slug}.md{anchor})"
+        if up == "/":    # an address on the wider site; Zensical would otherwise make it relative
+            return f"]({site}/{slug}/{anchor})" if site else m[0]
+        if up and parent:
+            return f"]({parent}{slug}/{anchor})"
+        return m[0]
+    return re.sub(r"\]\(((?:\.\./)*|/)([a-z0-9_-]+)/(#[^)]*)?\)", page, text)
 
 
 def _site(d, docs, build):
@@ -259,11 +442,15 @@ def _site(d, docs, build):
     nav, whole = [], []
     pages = sorted(docs.glob("[0-9]*.md"))
     index = docs / "00-index.md"
+    slugs = set()
+    for p in pages:
+        head = p.read_text(encoding="utf8").split("---\n")[1]
+        slugs |= {x.split(": ", 1)[1].strip() for x in head.splitlines() if x.startswith("slug: ")}
     for p in pages:
         raw = p.read_text(encoding="utf8")
         head = dict(x.split(": ", 1) for x in raw.split("---\n")[1].strip().splitlines() if ": " in x)
         title = head["title"].strip('"')
-        body = _clean(_front(raw))
+        body = _local_links(_clean(_front(raw)), slugs, w.get("parent_url", ""), w.get("site_url", "").rstrip("/"))
         slug = head["slug"]
         p.unlink()
         if slug == "index":
@@ -275,16 +462,17 @@ def _site(d, docs, build):
     (docs / "full.md").write_text("\n\n".join(whole), encoding="utf8")
     pdf_name = w.get("pdf_name", f"{d['name']}.pdf")
     made = root / "build" / f"{d['name']}_{d['layouts'][0]}.pdf"
-    if made.exists():
+    pdf_url = w.get("pdf_url")
+    if pdf_url:
+        pdf_name = pdf_url
+    elif made.exists():
         shutil.copy2(made, docs / pdf_name)
-    (docs / "pdf.md").write_text(f"# Read or download the PDF\n\n[Download the PDF]({pdf_name})\n\n<div id=\"rh-pdf\" class=\"rh-pdf\" data-src=\"../{pdf_name}\"></div>\n", encoding="utf8")
-    t = tokens()
-    s = t["spacing"]
-    css = ":root{" + "".join(f"--rh-{k.replace('_', '-')}:{v};" for k, v in s.items()) + f"--rh-body:{t['type']['body_web']}" + "}\n" + (HERE / "site.css").read_text(encoding="utf8").replace("TOKEN_ACCENT_DARK", t["colour"]["accent_dark"]).replace("TOKEN_ACCENT", t["colour"]["accent"])
-    (docs / "rh.css").write_text(css, encoding="utf8")
+    (docs / "pdf.md").write_text(f"# Read or download the PDF\n\n[Download the PDF]({pdf_name})\n\n<div id=\"rh-pdf\" class=\"rh-pdf\" data-src=\"{pdf_name if pdf_url else '../' + pdf_name}\"></div>\n", encoding="utf8")
+    (docs / "rh.css").write_text(site_css(), encoding="utf8")
     (docs / "mathjax.js").write_text('window.MathJax={tex:{inlineMath:[["\\\\(","\\\\)"]],displayMath:[["\\\\[","\\\\]"]]},options:{ignoreHtmlClass:".*|",processHtmlClass:"arithmatex"}};document$&&document$.subscribe(()=>{if(window.MathJax&&MathJax.typesetPromise){MathJax.typesetClear&&MathJax.typesetClear();MathJax.typesetPromise()}});\n', encoding="utf8")
     shutil.copy2(HERE / "pdfview.js", docs / "pdfview.js")
-    entries = "\n".join(f"  - {json_str(a)}: {b}" for a, b in [("Home", "index.md"), *nav, ("Whole guide", "full.md"), ("PDF", "pdf.md")])
+    tail = [(w["home_label"], w["home"])] if w.get("home") else []
+    entries = "\n".join(f"  - {json_str(a)}: {b}" for a, b in [("Home", "index.md"), *nav, ("Whole guide", "full.md"), ("PDF", "pdf.md"), *tail])
     (root / "build/mkdocs.yml").write_text(f"""site_name: {json_str(w.get('site_name', d['title']))}
 docs_dir: site_src
 site_dir: site

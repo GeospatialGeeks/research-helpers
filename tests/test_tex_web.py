@@ -49,7 +49,7 @@ def test_sections_are_numbered_as_in_the_pdf(tmp_path):
 def test_boxes_round_trip(tmp_path):
     p = project(tmp_path, boxes={"keybox": ("key", "Key idea")})
     out = T.finish(T.prepare(r"\begin{keybox}Text\end{keybox}", "1", {}, p))
-    assert '<div class="box box-key"><p class="box-title">Key idea</p>' in out and "</div>" in out
+    assert '<div class="box box-key" markdown="1"><p class="box-title">Key idea</p>' in out and "</div>" in out
 
 
 def test_units_leave_text_in_equations():

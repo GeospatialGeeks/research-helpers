@@ -1,0 +1,46 @@
+\chapter{Using the stack}
+\label{ch:use}
+
+The stack turns one LaTeX source into PDFs in several layouts and a website. It is a thin layer over LaTeX, Pandoc, PDF.js and Zensical. A project needs one file, \texttt{document.toml}, beside its source.
+
+\section{A guide}
+
+\begin{lstlisting}[language=text]
+name = "my_guide"
+title = "My guide"
+author = "Your Name"
+layouts = ["manual"]
+source = "tex"
+chapters = ["ch_one", "ch_two"]
+figures = "figures"
+shared = ["../shared"]
+[web]
+site_name = "My guide"
+intro = "One sentence for the home page."
+\end{lstlisting}
+
+\section{A manuscript}
+
+A manuscript names its main file, and the stack reads the title, abstract, body and bibliography from it.
+
+\begin{lstlisting}[language=text]
+name = "my_paper"
+layouts = ["own"]
+source = "paper"
+main = "main.tex"
+derive = "main.tex"
+\end{lstlisting}
+
+\section{Commands}
+
+\begin{lstlisting}[language=bash]
+python -m research_helpers.stack layouts
+python -m research_helpers.stack pdf .
+python -m research_helpers.stack pdf . ieee
+python -m research_helpers.stack web .
+python -m research_helpers.stack check .
+python -m research_helpers.stack snapshot .
+python -m research_helpers.stack deploy . ../site/teaching/my-guide
+\end{lstlisting}
+
+The \texttt{layouts} command lists every layout. A working example is in \texttt{examples/demo}, and the personal site template is at \texttt{github.com/AhmadAmmar/academic-site-template}.

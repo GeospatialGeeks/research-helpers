@@ -1,0 +1,23 @@
+name = "map_manual"
+title = "Making maps that can be repeated and published"
+author = "Ahmad Ammar"
+layouts = ["manual"]
+source = "tex"
+chapters = ["ch_anatomy", "ch_stack", "ch_projection", "ch_colour", "ch_components", "ch_workflow"]
+figures = "figures"
+[web]
+site_url = "https://ahmadammar.github.io"
+parent_url = "/teaching/"
+site_name = "Making maps that can be repeated and published"
+intro = "A programming manual for reproducible maps with Python, Matplotlib and Cartopy."
+inline = ["snip_", "areas"]
+pdf_url = "/files/Reproducible_maps_Ahmad_Ammar.pdf"
+home = "https://ahmadammar.github.io/teaching.html"
+home_label = "All guides"
+[web.slugs]
+ch_anatomy = "anatomy"
+ch_stack = "tools"
+ch_projection = "projections"
+ch_colour = "colour"
+ch_components = "components"
+ch_workflow = "workflow"

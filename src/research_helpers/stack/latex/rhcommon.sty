@@ -1,7 +1,9 @@
 % Shared style for guides, documentation and reports. Values come from rhtokens.tex, generated from tokens.toml.
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{rhcommon}[2026/11/02 shared document style]
-\RequirePackage{amsmath,graphicx,booktabs,tabularx,xcolor,listings,float,titlesec,setspace,caption}
+\RequirePackage{amsmath,amssymb,graphicx,booktabs,tabularx,xcolor,listings,float,titlesec,setspace,caption}
+\RequirePackage{longtable,calc,array}
+\newcounter{none}
 \RequirePackage[hidelinks]{hyperref}
 \input{rhtokens.tex}
 \setstretch{\rhline}
@@ -23,3 +25,15 @@
 \newcommand{\rhtitlemanual}[4]{\begin{titlepage}\raggedright\vspace*{4cm}{\Huge\bfseries\color{rhaccent}#1\par}\vspace{0.8em}{\Large\color{rhmuted}#2\par}\vspace{2.5em}{\large #3\par}\vfill{\small\color{rhmuted}#4\par}\end{titlepage}}
 \newcommand{\rhtitlepamphlet}[4]{\begin{titlepage}\centering\vspace*{3cm}{\huge\bfseries #1\par}\vspace{1em}{\Large #2\par}\vspace{2.5em}{\large #3\par}\vfill{\small #4\par}\end{titlepage}}
 \newcommand{\rhtitleplain}[4]{{\centering{\LARGE\bfseries #1\par}\vspace{0.4em}{\large #2\par}\vspace{0.6em}{#3\par}{\small\color{rhmuted}#4\par}\vspace{1em}}}
+% what Pandoc's LaTeX expects, and code languages that listings does not know
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\pandocbounded}[1]{#1}
+\setlength{\LTpre}{0.5em}\setlength{\LTpost}{0.5em}
+\lstdefinelanguage{latex}{morecomment=[l]{\%}}
+\lstdefinelanguage{text}{}
+\lstdefinelanguage{yaml}{morecomment=[l]{\#}}
+\lstdefinelanguage{powershell}{morecomment=[l]{\#}}
+\lstdefinelanguage{dockerfile}{morecomment=[l]{\#}}
+\lstdefinelanguage{bibtex}{}
+\RequirePackage{etoolbox}
+\AtBeginEnvironment{longtable}{\footnotesize}

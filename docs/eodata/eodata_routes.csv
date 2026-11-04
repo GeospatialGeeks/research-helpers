@@ -1,0 +1,49 @@
+gee_id,kind,where,result,note
+COPERNICUS/S2_SR_HARMONIZED,stac,sentinel-2-l2a,"ok: collection found, 3 sample items","Same ESA product. Earth Engine's harmonised version removes the 1000 offset added from January 2022, so check the offset."
+COPERNICUS/S2_SR_HARMONIZED,stac,sentinel-2-l2a,"ok: collection found, 3 sample items","Second copy, on Amazon."
+COPERNICUS/S2_SR,stac,sentinel-2-l2a,"ok: collection found, 3 sample items","Same ESA product. Earth Engine's harmonised version removes the 1000 offset added from January 2022, so check the offset."
+COPERNICUS/S2_SR,stac,sentinel-2-l2a,"ok: collection found, 3 sample items","Second copy, on Amazon."
+COPERNICUS/S1_GRD,stac,sentinel-1-rtc,"ok: collection found, 3 sample items","Terrain-corrected and linear power, whereas Earth Engine holds dB without terrain flattening. Not interchangeable without compare()."
+COPERNICUS/S1_GRD,stac,sentinel-1-grd,"ok: collection found, 3 sample items",Unprocessed GRD: calibration needed.
+LANDSAT/LC08/C02/T1_L2,stac,landsat-c2-l2,"ok: collection found, 3 sample items",Same USGS Collection 2 Level 2. Filter by platform.
+LANDSAT/LC09/C02/T1_L2,stac,landsat-c2-l2,"ok: collection found, 3 sample items",Same USGS Collection 2 Level 2. Filter by platform.
+LANDSAT/LE07/C02/T1_L2,stac,landsat-c2-l2,"ok: collection found, 3 sample items",Same USGS Collection 2 Level 2. Filter by platform.
+LANDSAT/LT05/C02/T1_L2,stac,landsat-c2-l2,"ok: collection found, 3 sample items",Same USGS Collection 2 Level 2. Filter by platform.
+LANDSAT/LT05/C01/T1_SR,stac,landsat-c2-l2,"ok: collection found, 3 sample items",Same USGS Collection 2 Level 2. Filter by platform.
+LANDSAT/LE07/C01/T1_SR,stac,landsat-c2-l2,"ok: collection found, 3 sample items",Same USGS Collection 2 Level 2. Filter by platform.
+LANDSAT/LC08/C01/T1_SR,stac,landsat-c2-l2,"ok: collection found, 3 sample items",Same USGS Collection 2 Level 2. Filter by platform.
+MODIS/061/MOD10A1,stac,modis-10A1-061,"ok: collection found, 3 sample items",
+MODIS/061/MOD10A1,earthaccess,MOD10A1,ok: MOD10A1 listed; login needed to download,NASA NSIDC. Needs a free Earthdata login.
+MODIS/061/MYD10A1,stac,modis-10A1-061,"ok: collection found, 3 sample items",Filter platform to Aqua.
+MODIS/061/MYD10A1,earthaccess,MYD10A1,ok: MYD10A1 listed; login needed to download,NASA NSIDC. Needs a free Earthdata login.
+MODIS/061/MOD10A2,stac,modis-10A2-061,"ok: collection found, 3 sample items",
+MODIS/061/MCD12Q1,stac,modis-12Q1-061,"collection found, no items for the test place",
+MODIS/006/MOD11A1,stac,modis-11A1-061,"ok: collection found, 3 sample items",Collection 6.1 replaces 6.
+COPERNICUS/DEM/GLO30_2024_1,stac,cop-dem-glo-30,"ok: collection found, 1 sample items",
+NASA/NASADEM_HGT/001,stac,nasadem,"ok: collection found, 2 sample items",
+ESA/WorldCover/v200,stac,esa-worldcover,"ok: collection found, 3 sample items",
+GOOGLE/DYNAMICWORLD/V1,none,,no second route,"No full copy elsewhere. Use io-lulc-annual-v02 or esa-worldcover as stand-ins, and report the change."
+projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS,stac,io-lulc-annual-v02,"ok: collection found, 3 sample items",
+COPERNICUS/S5P/NRTI/L3_NO2,stac,sentinel-5p-l2-netcdf,"ok: collection found, 3 sample items",Level 2 swaths: gridding is needed.
+JRC/GSW1_4/GlobalSurfaceWater,stac,jrc-gsw,"ok: collection found, 1 sample items",
+JRC/GSW1_0/GlobalSurfaceWater,stac,jrc-gsw,"ok: collection found, 1 sample items",Newer version.
+LARSE/GEDI/GEDI02_A_002_MONTHLY,earthaccess,GEDI02_A,ok: GEDI02_A listed; login needed to download,Footprint files; the monthly raster must be rebuilt.
+LARSE/GEDI/GEDI04_B_002,earthaccess,GEDI_L4B_Gridded_Biomass_V2_1_2299,ok: GEDI_L4B_Gridded_Biomass_V2_1_2299 listed; login needed to download,ORNL DAAC.
+ECMWF/ERA5_LAND/DAILY_AGGR,cds,reanalysis-era5-land,not tested: needs a free key,Needs a free key from the Copernicus Climate Data Store in ~/.cdsapirc.
+ECMWF/ERA5_LAND/DAILY_AGGR,stac,era5-pds,"ok: collection found, 3 sample items","Global ERA5 at about 31 km, not ERA5-Land at 9 km."
+ECMWF/ERA5_LAND/MONTHLY_AGGR,cds,reanalysis-era5-land,not tested: needs a free key,Needs a free key from the Copernicus Climate Data Store in ~/.cdsapirc.
+ECMWF/ERA5_LAND/MONTHLY_AGGR,stac,era5-pds,"ok: collection found, 3 sample items","Global ERA5 at about 31 km, not ERA5-Land at 9 km."
+NASA/GLDAS/V021/NOAH/G025/T3H,earthaccess,GLDAS_NOAH025_3H,ok: GLDAS_NOAH025_3H listed; login needed to download,GES DISC.
+NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG,url,https://eogdata.mines.edu/nighttime_light/monthly/v10/,"server is there, login needed: 401",Colorado School of Mines. Needs a free login.
+JRC/GHSL/P2023A/GHS_BUILT_V/2020,url,https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/,ok: address answers 200,
+JRC/GHSL/P2023A/GHS_BUILT_H/2018,url,https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_H_GLOBE_R2023A/,ok: address answers 200,
+GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL,url,https://source.coop/tge-labs/aef,ok: address answers 200,Copy of the annual embeddings as cloud files.
+GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED,none,,no second route,"No copy elsewhere. Use SCL from sentinel-2-l2a, which masks clouds less strictly, and compare."
+UK/EA/ENGLAND_1M_TERRAIN/2022,url,https://environment.data.gov.uk/survey,ok: address answers 200,"Environment Agency LiDAR, as tiles."
+MERIT/DEM/v1_0_3,url,https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_DEM/,ok: address answers 200,Needs a free registration.
+JAXA/ALOS/PALSAR/YEARLY/SAR/2020,stac,alos-palsar-mosaic,"ok: collection found, 3 sample items",
+UMD/hansen/global_forest_change_2018_v1_6,url,https://storage.googleapis.com/earthenginepartners-hansen/,ok: address answers 200,"Direct files, newer versions alongside."
+COPERNICUS/Landcover/100m/Proba-V-C3/Global/2019,url,https://land.copernicus.eu/en/products/global-dynamic-land-cover,ok: address answers 200,"Copernicus Land Service, and Zenodo record 3939050."
+WWF/HydroSHEDS/v1/Basins/hybas_5,url,https://www.hydrosheds.org/products/hydrobasins,ok: address answers 200,
+GLIMS/current,url,https://www.glims.org/download/,ok: address answers 200,
+USDOS/LSIB_SIMPLE/2017,url,https://geodata.state.gov/geonetwork/srv/eng/catalog.search,ok: address answers 200,Or shared-geodata for boundaries used here.

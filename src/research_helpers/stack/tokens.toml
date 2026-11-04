@@ -19,3 +19,5 @@ line = 1.12
 [type]
 code_size_pdf = "scriptsize"
 body_web = "0.95rem"
+font_main = "Cambria"
+font_mono = "Consolas"

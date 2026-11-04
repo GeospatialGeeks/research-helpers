@@ -1,0 +1,76 @@
+\chapter{The rules}
+\label{ch:rules}
+
+These rules apply to every long document, site and manuscript built with this stack. Where a tool can check a rule, the last column names the check.
+
+\section{Source and outputs}
+
+\begin{longtable}{p{0.68\linewidth}p{0.24\linewidth}}
+\toprule
+Rule & Checked by \\
+\midrule
+LaTeX is the only source of a long document. PDF, web chapters, the long page and the PDF reader are all built from it, never edited by hand. & review \\
+Spacing, colours and code size are set once, in \texttt{stack/tokens.toml}, and PDF and web both read them. & \texttt{stack pdf}, \texttt{stack web} \\
+A required template, such as a thesis class, stays as it is and is built through the \texttt{own} layout. & \texttt{stack pdf . own} \\
+A project is described in one \texttt{document.toml}. A new layout is a line of Python in the stack, and the project's text does not change. & \texttt{stack layouts} \\
+A journal layout reads the manuscript's own main file through \texttt{derive}, so no second copy of the text exists. & \texttt{stack pdf} \\
+\bottomrule
+\end{longtable}
+
+\section{Guides stand alone}
+
+\begin{longtable}{p{0.68\linewidth}p{0.24\linewidth}}
+\toprule
+Rule & Checked by \\
+\midrule
+Each guide assumes no prior knowledge and contains everything a reader needs, since it may be printed or read offline. & review \\
+Never write ``click here'' or rely on a link for needed knowledge. Explain the idea in place. A link is only for going further. & review \\
+Web addresses are written out, or printed as a footnote in the PDF, so paper copies still work. & \texttt{rhcommon.sty} \\
+An explanation used by several guides is one file in a shared folder, listed under \texttt{shared} in \texttt{document.toml} and brought in by \texttt{input}. & build \\
+Results and printed output come from running real code, saved to a generated file and included, never typed by hand. & \texttt{make\_outputs.py} \\
+Formulas and constants come from the code they describe, through \texttt{research\_helpers.snippets} and \texttt{autotex}, so a change reaches every document at the next build. & tests \\
+Screenshots are real. They are taken in a clean profile, of one window only, and looked at before they are used. A step with no picture yet keeps its text and gains the picture later. & review \\
+\bottomrule
+\end{longtable}
+
+\section{Experiments and what is reported}
+
+\begin{longtable}{p{0.68\linewidth}p{0.24\linewidth}}
+\toprule
+Rule & Checked by \\
+\midrule
+Each project keeps a private experiment record: what each experiment asked, what it changed, what it produced, how it was measured, what it led to next, and the reasoning at the time. & review \\
+A manuscript reports the final method and the evidence for it. It holds no history of attempts, and no account of what was added, abandoned or could not be reproduced. & review \\
+Each choice of data, variable, threshold or algorithm is justified by a benchmark against its alternatives, including what happens when each input is left out, and these comparisons appear in the manuscript. & review \\
+Every number in a manuscript comes from tested code through generated files, so that manuscripts can be rebuilt whenever results change. & \texttt{autotex} \\
+Where earlier work had a fault, the fault is fixed and the corrected work is reported as the method. & review \\
+\bottomrule
+\end{longtable}
+
+\section{Names and versions}
+
+\begin{longtable}{p{0.68\linewidth}p{0.24\linewidth}}
+\toprule
+Rule & Checked by \\
+\midrule
+Figures begin \texttt{map\_}, \texttt{fig\_} or \texttt{story\_}, and scripts are lower case with an optional two-digit prefix. & \texttt{stack check} \\
+No \texttt{\_v2} or \texttt{final} in a file name. Git holds the versions, with tags for releases. & \texttt{stack check} \\
+Builds go in \texttt{build/}, named \texttt{<project>\_<layout>.pdf}. They can always be remade. & \texttt{stack pdf} \\
+Dated pictures of each build are kept in \texttt{snapshots/<date>/}, to show how outputs change over time. & \texttt{stack snapshot} \\
+A theme has a version number, a change list and a git tag. & review \\
+\bottomrule
+\end{longtable}
+
+\section{What may be public}
+
+\begin{longtable}{p{0.68\linewidth}p{0.24\linewidth}}
+\toprule
+Rule & Checked by \\
+\midrule
+Tools, pipelines and teaching material may be public, as long as no examples reveal unpublished data or results. & review \\
+Manuscript text, figures and PDFs stay in private repositories until accepted. & \texttt{prepub\_check.py} \\
+Public text is written for its reader only, with no notes to self, template guidance or tool names. & review \\
+Before anything goes online, look at it locally. After it goes online, check the links. & \texttt{build\_guides.py check} \\
+Back up and tag the current state before any large rebuild. & review \\
+\bottomrule
+\end{longtable}
