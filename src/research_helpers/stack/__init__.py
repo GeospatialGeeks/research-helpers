@@ -269,7 +269,12 @@ def _own(d, out):
                 shutil.copy2(d["_src"] / (stem + suffix), out / (stem + suffix))
     uses_xe = d.get("engine") == "xelatex" or any("fontspec" in f.read_text(encoding="utf8", errors="replace") for f in [*d["_src"].glob("*.tex"), *d["_src"].glob("*.sty"), *d["_src"].glob("*.cls")])
     if not d.get("command"):
-        subprocess.run(["latexmk", "-xelatex" if uses_xe else "-pdf", "-interaction=nonstopmode", f"-outdir={out}", main], cwd=d["_src"], capture_output=True)
+        args = ["latexmk", "-xelatex" if uses_xe else "-pdf", "-interaction=nonstopmode", f"-outdir={out}", main]
+        subprocess.run(args, cwd=d["_src"], capture_output=True)
+        log = out / (Path(main).stem + ".log")
+        if log.exists() and "undefined references" in log.read_text(encoding="latin1", errors="replace"):
+            # latexmk can stop one pass early when a label comes from a generated file read after its first use
+            subprocess.run(args[:1] + ["-g"] + args[1:], cwd=d["_src"], capture_output=True)
     made = out / (Path(main).stem + ".pdf")
     xdv = out / (Path(main).stem + ".xdv")
     if xdv.exists():
