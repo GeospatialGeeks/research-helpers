@@ -21,3 +21,12 @@ code_size_pdf = "scriptsize"
 body_web = "0.95rem"
 font_main = "Cambria"
 font_mono = "Consolas"
+
+[site]
+# The wider site every web build sits in: its bar, footer and links.
+brand_first = "Ahmad"
+brand_second = "Ammar"
+brand_url = "/index.html"
+owner = "Ahmad Ammar"
+nav = [["About", "/index.html"], ["Research", "/research.html"], ["Teaching", "/teaching.html"], ["Projects", "/projects.html"], ["Writing", "/writing.html"], ["CV", "/cv.html"]]
+links = [["Email", "mailto:ahmadammargeo@gmail.com"], ["GitHub", "https://github.com/AhmadAmmar"], ["LinkedIn", "https://www.linkedin.com/in/ahmadammar/"]]

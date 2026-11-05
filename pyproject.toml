@@ -34,4 +34,4 @@ Homepage = "https://github.com/GeospatialGeeks/research-helpers"
 where = ["src"]
 
 [tool.setuptools.package-data]
-research_helpers = ["stack/latex/*", "stack/*.toml", "stack/*.css", "stack/*.js"]
+research_helpers = ["stack/latex/*", "stack/*.toml", "stack/*.css", "stack/*.js", "stack/skin/*", "stack/skin/partials/*"]

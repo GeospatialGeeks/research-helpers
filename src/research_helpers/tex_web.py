@@ -357,11 +357,12 @@ def build_pages(project):
         s, items = split_figures(s, project)
         md = to_markdown(prepare(s, number, numbers, project), project, page_of, numbers)
         for n, (_, caption, label) in enumerate(items):
-            alt = re.sub(r"[\\$\[\]{}~]", " ", caption)[:200].strip() or "Figure"
             text = to_markdown(prepare(caption, number, numbers, project), project, page_of, numbers).strip().replace("\n", " ") if caption else ""
+            # alt text from the rendered caption: link text kept, link targets and Markdown marks dropped
+            alt = re.sub(r"\s+", " ", re.sub(r"[`*_\[\]<>\\$]", "", re.sub(r"\]\([^)]*\)", "]", text)))[:200].strip() or "Figure"
             head = f"**Figure {numbers.get(label, '')}.** " if label else ""
             anchor = f'<a id="{label}"></a>\n\n' if label else ""
-            md = md.replace(f"FIGMARK{n}END", f"{anchor}![{alt}]({project.url}fig/f-{str(figure_no + n).zfill(width)}.png)\\\n\n{head}{text}")
+            md = md.replace(f"FIGMARK{n}END", f"{anchor}![{alt}]({project.url}fig/f-{str(figure_no + n).zfill(width)}.png)\n\n{head}{text}")
         figure_no += len(items)
         md = finish(md)
         title = title.replace("--", "\u2013")

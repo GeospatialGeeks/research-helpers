@@ -23,6 +23,7 @@ Example document.toml:
     pdf_name = "Reading_radar_images_Ahmad_Ammar.pdf"
 """
 import datetime
+import json
 import functools
 import http.server
 import os
@@ -474,6 +475,7 @@ def _site(d, docs, build):
         shutil.copy2(made, docs / pdf_name)
     (docs / "pdf.md").write_text(f"# Read or download the PDF\n\n[Download the PDF]({pdf_name})\n\n<div id=\"rh-pdf\" class=\"rh-pdf\" data-src=\"{pdf_name if pdf_url else '../' + pdf_name}\"></div>\n", encoding="utf8")
     (docs / "rh.css").write_text(site_css(), encoding="utf8")
+    skin = write_skin(root / "build/skin", docs)
     (docs / "mathjax.js").write_text('window.MathJax={tex:{inlineMath:[["\\\\(","\\\\)"]],displayMath:[["\\\\[","\\\\]"]]},options:{ignoreHtmlClass:".*|",processHtmlClass:"arithmatex"}};document$&&document$.subscribe(()=>{if(window.MathJax&&MathJax.typesetPromise){MathJax.typesetClear&&MathJax.typesetClear();MathJax.typesetPromise()}});\n', encoding="utf8")
     shutil.copy2(HERE / "pdfview.js", docs / "pdfview.js")
     tail = [(w["home_label"], w["home"])] if w.get("home") else []
@@ -483,15 +485,20 @@ docs_dir: site_src
 site_dir: site
 theme:
   name: material
+  custom_dir: skin
+  font: false
   features: [navigation.instant, navigation.top, navigation.footer, toc.follow, search.highlight]
   palette:
     - scheme: default
       toggle: {{icon: material/weather-night, name: Dark}}
     - scheme: slate
       toggle: {{icon: material/weather-sunny, name: Light}}
-extra_css: [rh.css]
+extra_css: [theme.css, rh.css]
+extra:
+  skin: {json.dumps(skin_settings(d))}
 extra_javascript:
   - mathjax.js
+  - site.js
   - pdfview.js
   - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js
 markdown_extensions:
@@ -511,6 +518,41 @@ nav:
         if r.returncode:
             raise RuntimeError(r.stdout + r.stderr)
     return root / "build/site"
+
+
+def skin_settings(d):
+    """The wider site's bar and footer for one document: tokens.toml [site], with the document's [web] section
+    (the site heading it belongs under, such as Teaching) and source link."""
+    site, w = tokens().get("site", {}), d.get("web", {})
+    section = w.get("section", "Teaching")
+    nav = [{"label": a, "url": b} for a, b in site.get("nav", [])]
+    return {
+        "brand_first": site.get("brand_first", ""), "brand_second": site.get("brand_second", ""), "brand_url": site.get("brand_url", "/"),
+        "owner": w.get("owner", site.get("owner", d.get("author", ""))), "year": datetime.date.today().year,
+        "nav": nav, "section": section, "section_url": w.get("section_url", next((x["url"] for x in nav if x["label"] == section), "/")),
+        "links": [{"label": a, "url": b} for a, b in site.get("links", [])], "source": w.get("source", ""),
+    }
+
+
+def write_skin(folder, docs):
+    """Copy the shared skin: templates into folder (Zensical's custom_dir), theme and script into the pages."""
+    _empty(folder)
+    shutil.copytree(HERE / "skin", folder, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.css", "*.js"))
+    shutil.copy2(HERE / "skin/theme.css", docs / "theme.css")
+    shutil.copy2(HERE / "skin/site.js", docs / "site.js")
+    return folder
+
+
+def refresh_skin(templates, stylesheets, scripts):
+    """For a site that keeps its own mkdocs.yml (built where this package is not installed, such as in CI): copy
+    the shared templates, theme, spacing and script into its folders, so it looks and behaves like every other build.
+    Its mkdocs.yml names them and carries extra.skin (see skin_settings)."""
+    templates, stylesheets, scripts = Path(templates), Path(stylesheets), Path(scripts)
+    shutil.copytree(HERE / "skin", templates, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.css", "*.js"))
+    shutil.copy2(HERE / "skin/theme.css", stylesheets / "site-theme.css")
+    (stylesheets / "rh_spacing.css").write_text(site_css(), encoding="utf8")
+    shutil.copy2(HERE / "skin/site.js", scripts / "site.js")
+    print("skin copied to", templates, stylesheets, scripts, flush=True)
 
 
 def json_str(s):

@@ -1,8 +1,7 @@
-/* Shared web style. The values in :root are generated from tokens.toml and placed above this file. */
-[data-md-color-scheme]{--md-primary-fg-color:#TOKEN_ACCENT;--md-accent-fg-color:#TOKEN_ACCENT;--md-typeset-a-color:#TOKEN_ACCENT}
-[data-md-color-scheme="slate"]{--md-primary-fg-color:#TOKEN_ACCENT_DARK;--md-accent-fg-color:#TOKEN_ACCENT_DARK;--md-typeset-a-color:#TOKEN_ACCENT_DARK}
+/* Shared web spacing. The values in :root are generated from tokens.toml and placed above this file.
+   Headings take the text colour: the site theme sets the primary colour to the page background. */
 .md-typeset{font-size:var(--rh-body);line-height:calc(var(--rh-line) + .35)}
-.md-typeset h2{margin:calc(var(--rh-section-before)*1em) 0 calc(var(--rh-section-after)*1em);color:var(--md-primary-fg-color)}
+.md-typeset h2{margin:calc(var(--rh-section-before)*1em) 0 calc(var(--rh-section-after)*1em);color:var(--md-typeset-color)}
 .md-typeset h3{margin:calc(var(--rh-subsection-before)*1em) 0 calc(var(--rh-subsection-after)*1em)}
 .md-typeset p{margin:calc(var(--rh-paragraph)*1em) 0}
 .md-typeset img{display:block;max-width:100%;height:auto;margin:1em auto;background:#fff;border-radius:3px}
