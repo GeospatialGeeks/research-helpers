@@ -41,3 +41,5 @@
 \lstdefinelanguage{bibtex}{}
 \RequirePackage{etoolbox}
 \AtBeginEnvironment{longtable}{\footnotesize}
+% Notebook cells: a small In [n] / Out [n] label above each code or output listing
+\newcommand{\nbprompt}[1]{\par\smallskip\noindent{\scriptsize\sffamily\color{gray}#1}\par\nopagebreak}

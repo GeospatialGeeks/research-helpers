@@ -39,7 +39,7 @@ HERE = Path(__file__).parent
 LATEX = HERE / "latex"
 TEMPLATES = Path(os.environ.get("RH_TEMPLATES", Path.home() / "research-templates"))
 
-SNIPPET = "\\newcommand{\\snippetcaption}[1]{\\textbf{From the code:} \\texttt{#1}}"
+SNIPPET = "\\newcommand{\\snippetcaption}[1]{\\textbf{From the code:} \\texttt{#1}}\n\\providecommand{\\nbprompt}[1]{\\par #1\\par}"
 PANDOC_SITE = ("markdown-smart-raw_tex-raw_attribute+tex_math_dollars-fenced_divs-bracketed_spans-native_divs-native_spans"
                "+pipe_tables-grid_tables-simple_tables-multiline_tables-fenced_code_attributes")
 PACKAGES = r"\usepackage[T1]{fontenc}" + "\n" + r"\usepackage{lmodern,xurl}" + "\n"
@@ -200,6 +200,8 @@ def _template_files(names, dest):
 def pdf(project, *wanted):
     """Write a thin wrapper for each layout and compile it. The project's own files are only read."""
     d = load(project)
+    from .notebooks import build as run_notebooks
+    run_notebooks(d)
     results = {}
     if d.get("derive"):
         _derive(d)
@@ -310,7 +312,9 @@ def _aux(d):
 def web(project, build=True):
     """Chapters, one long page and an embedded PDF, as a Zensical site in build/site."""
     from .. import tex_web as T
+    from .notebooks import build as run_notebooks
     d = load(project)
+    run_notebooks(d)
     w = d.get("web", {})
     root, src = d["_root"], d["_src"]
     docs = root / "build/site_src"
@@ -337,7 +341,7 @@ def web(project, build=True):
             root=src, aux=_aux(d), url="/", out=docs, figures=docs / "fig", to=PANDOC_SITE,
             chapters=[T.Chapter(slugs.get(c, c.replace("_", "-")), src / f"{c}.tex") for c in d["chapters"]],
             preamble=["\\documentclass[11pt,a4paper]{report}", "\\usepackage[T1]{fontenc}", "\\usepackage{lmodern,caption,amsmath,graphicx,booktabs,xcolor,listings,float,tabularx}", "\\usepackage[margin=24mm]{geometry}", f"\\graphicspath{{{{{(root / d.get('figures', 'figures')).as_posix()}/}}}}", *[f"\\input{{{m}}}" for m in defines], SNIPPET],
-            macros=macros, search=[src, *[(src / x).resolve() for x in d.get("shared", [])]], definition_inputs=tuple(Path(m).name for m in defines), inline_generated=tuple(w.get("inline", ["snip_", "table_"])),
+            macros=macros, search=[src, *[(src / x).resolve() for x in d.get("shared", [])]], definition_inputs=tuple(Path(m).name for m in defines), inline_generated=tuple(w.get("inline", ["snip_", "table_"])) + ("nb_",),
             description="{label}: " + d["title"], index_head=front,
             bibliography=(src / d["bibliography"]) if d.get("bibliography") else None,
         )
@@ -430,6 +434,8 @@ def _clean(text):
     text = re.sub(r'(?m)^<div((?:\s+(?!markdown=)[\w-]+="[^"]*")*)>$', lambda m: f'<div{m[1]} markdown="1">', text)
     # pandoc writes a table caption as ": text" after the table; Zensical has no such syntax, so it becomes a captioned paragraph
     text = re.sub(r"(?m)^: (.+)$", r'\1\n{: .table-caption }', text)
+    # notebook prompts: "In [3]" and "Out [3]" lines above code and output become small labels
+    text = re.sub(r"(?m)^(In|Out) \\?\[(\d+)\\?\]$", r'<div class="nb-prompt nb-\1">\1 [\2]</div>', text)
     # a table must start after a blank line, or it is read as a paragraph of pipes
     text = re.sub(r"(?m)^([^|\n].*)\n(\|.*\|)$", r"\1\n\n\2", text)
     return text
@@ -480,13 +486,29 @@ def _site(d, docs, build):
         pdf_name = pdf_url
     elif made.exists():
         shutil.copy2(made, docs / pdf_name)
+    nb_tail = []
+    nbs = d.get("notebooks")
+    if nbs and (root / "build/notebooks").exists():
+        (docs / "notebooks").mkdir(exist_ok=True)
+        rows = []
+        for name in nbs.get("sources", []):
+            f = root / "build/notebooks" / f"{name}.ipynb"
+            if f.exists():
+                shutil.copy2(f, docs / "notebooks" / f.name)
+                colab = f" · [Open in Colab](https://colab.research.google.com/github/{nbs['colab']}/{f.name})" if nbs.get("colab") else ""
+                rows.append(f"- **{name}.ipynb**: [download](notebooks/{f.name}){colab}")
+        (docs / "notebooks.md").write_text("# Run it yourself: the notebooks\n\n"
+            "Each notebook holds every step of this document with its outputs, already run. Download it and open it in "
+            "Jupyter, VS Code or Google Colab, then run the cells from the top. The data each one needs is downloaded by "
+            "its first cells.\n\n" + "\n".join(rows) + "\n", encoding="utf8")
+        nb_tail = [("Notebooks", "notebooks.md")]
     (docs / "pdf.md").write_text(f"# Read or download the PDF\n\n[Download the PDF]({pdf_name})\n\n<div id=\"rh-pdf\" class=\"rh-pdf\" data-src=\"{pdf_name if pdf_url else '../' + pdf_name}\"></div>\n", encoding="utf8")
     (docs / "rh.css").write_text(site_css(), encoding="utf8")
     skin = write_skin(root / "build/skin", docs)
     (docs / "mathjax.js").write_text('window.MathJax={tex:{inlineMath:[["\\\\(","\\\\)"]],displayMath:[["\\\\[","\\\\]"]]},options:{ignoreHtmlClass:".*|",processHtmlClass:"arithmatex"}};document$&&document$.subscribe(()=>{if(window.MathJax&&MathJax.typesetPromise){MathJax.typesetClear&&MathJax.typesetClear();MathJax.typesetPromise()}});\n', encoding="utf8")
     shutil.copy2(HERE / "pdfview.js", docs / "pdfview.js")
     tail = [(w["home_label"], w["home"])] if w.get("home") else []
-    entries = "\n".join(f"  - {json_str(a)}: {b}" for a, b in [("Home", "index.md"), *nav, ("Whole guide", "full.md"), ("PDF", "pdf.md"), *tail])
+    entries = "\n".join(f"  - {json_str(a)}: {b}" for a, b in [("Home", "index.md"), *nav, ("Whole guide", "full.md"), *nb_tail, ("PDF", "pdf.md"), *tail])
     (root / "build/mkdocs.yml").write_text(f"""site_name: {json_str(w.get('site_name', d['title']))}
 docs_dir: site_src
 site_dir: site

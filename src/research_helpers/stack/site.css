@@ -13,3 +13,6 @@ mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%}
 .box-title{font-weight:700;margin-top:0}
 .box-care{border-left-color:#b45309}.box-answer{border-left-color:#15803d}
 .md-typeset .table-caption{font-size:.85em;color:var(--md-default-fg-color--light);margin-top:.4em}
+.md-typeset .nb-prompt{font:600 .7rem/1.2 var(--md-code-font-family,monospace);color:var(--md-default-fg-color--light);margin:1.1em 0 -.6em}
+.md-typeset .nb-Out{color:var(--md-accent-fg-color)}
+.md-typeset .nb-Out + .highlight pre,.md-typeset .nb-Out + .highlight code{background:transparent}.md-typeset .nb-Out + .highlight pre{border-left:3px solid var(--md-accent-fg-color);box-shadow:none}
