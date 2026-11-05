@@ -5,6 +5,10 @@
 \RequirePackage{longtable,calc,array}
 \newcounter{none}
 \RequirePackage[hidelinks]{hyperref}
+% DOIs in reference lists link to the article (plainnat calls \doi when a .bib entry has a doi field)
+\providecommand{\doi}[1]{\href{https://doi.org/#1}{doi:\nolinkurl{#1}}}
+% Reference lists are headed References, in every layout
+\AtBeginDocument{\providecommand{\bibname}{}\renewcommand{\bibname}{References}\renewcommand{\refname}{References}}
 \input{rhtokens.tex}
 \setstretch{\rhline}
 \setlength{\parskip}{\rhparagraph em}

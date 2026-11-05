@@ -113,7 +113,7 @@ def _book(style, klass="report"):
 \\begin{{document}}
 \\rhtitle{style}{{{d['title']}}}{{{d.get('subtitle', '')}}}{{{d.get('author', '')}}}{{{date}}}
 {toc}{d['_body']}
-{d['_bib']('agsm')}
+{d['_bib']('plainnat')}
 \\end{{document}}
 """
     return make
@@ -161,7 +161,7 @@ LAYOUTS = {
     "elsevier-print": (lambda d: _elsevier("final,5p,times,twocolumn,authoryear", d), "Two columns, as it would look in print", ["elsarticle"]),
     "ieee": (_ieee, "IEEE conference, two columns, numbered citations", ["ieeetran"]),
     "manual": (_book("manual"), "Guide, tutorial or documentation", []),
-    "pamphlet": (_book("pamphlet", "article"), "Long essay with a centred title page", []),
+    "pamphlet": (_book("pamphlet"), "Long essay with a centred title page; chapters become its web pages", []),
     "report": (_book("plain", "article"), "Working record, with a compact title", []),
     "own": (None, "The project's own main file, for a required template such as a thesis class", []),
 }
@@ -339,6 +339,7 @@ def web(project, build=True):
             preamble=["\\documentclass[11pt,a4paper]{report}", "\\usepackage[T1]{fontenc}", "\\usepackage{lmodern,caption,amsmath,graphicx,booktabs,xcolor,listings,float,tabularx}", "\\usepackage[margin=24mm]{geometry}", f"\\graphicspath{{{{{(root / d.get('figures', 'figures')).as_posix()}/}}}}", *[f"\\input{{{m}}}" for m in defines], SNIPPET],
             macros=macros, search=[src, *[(src / x).resolve() for x in d.get("shared", [])]], definition_inputs=tuple(Path(m).name for m in defines), inline_generated=tuple(w.get("inline", ["snip_", "table_"])),
             description="{label}: " + d["title"], index_head=front,
+            bibliography=(src / d["bibliography"]) if d.get("bibliography") else None,
         )
     print("figures", T.build_figures(p)[:2], flush=True)
     T.build_pages(p)
@@ -425,6 +426,12 @@ def _clean(text):
     """What Zensical needs: display maths on its own lines, and links and pictures relative to the site."""
     text = re.sub(r"\s*\$\$(.+?)\$\$\s*", lambda m: "\n\n$$\n" + m[1].strip() + "\n$$\n\n", text, flags=re.S)
     text = re.sub(r"\]\(/fig/", "](fig/", text)
+    # pandoc wraps centred material in <div class="...">; Zensical reads Markdown inside a block only when told to
+    text = re.sub(r'(?m)^<div((?:\s+(?!markdown=)[\w-]+="[^"]*")*)>$', lambda m: f'<div{m[1]} markdown="1">', text)
+    # pandoc writes a table caption as ": text" after the table; Zensical has no such syntax, so it becomes a captioned paragraph
+    text = re.sub(r"(?m)^: (.+)$", r'\1\n{: .table-caption }', text)
+    # a table must start after a blank line, or it is read as a paragraph of pipes
+    text = re.sub(r"(?m)^([^|\n].*)\n(\|.*\|)$", r"\1\n\n\2", text)
     return text
 
 
@@ -530,7 +537,7 @@ def skin_settings(d):
         "brand_first": site.get("brand_first", ""), "brand_second": site.get("brand_second", ""), "brand_url": site.get("brand_url", "/"),
         "owner": w.get("owner", site.get("owner", d.get("author", ""))), "year": datetime.date.today().year,
         "nav": nav, "section": section, "section_url": w.get("section_url", next((x["url"] for x in nav if x["label"] == section), "/")),
-        "links": [{"label": a, "url": b} for a, b in site.get("links", [])], "source": w.get("source", ""), "edit": w.get("edit_url", ""),
+        "links": [{"label": a, "url": b} for a, b in site.get("links", [])], "source": w.get("source", ""), "edit": w.get("edit_url", ""), "rename": w.get("rename_url", ""),
     }
 
 

@@ -12,5 +12,5 @@
   </div>
 </footer>
 {% if s.edit %}
-<div class="admin-edit" data-admin-edit hidden><span>Admin</span> <a href="{{ s.edit }}">Edit the LaTeX source in the browser editor</a> <span class="admin-src">rebuild with build_guides.py</span></div>
+<div class="admin-edit" data-admin-edit hidden><span>Admin</span> <a href="{{ s.edit }}">Edit the LaTeX source in the browser editor</a> {% if s.rename %}<a href="{{ s.rename }}">Rename this document</a> {% endif %}<span class="admin-src">rebuild with build_guides.py</span></div>
 {% endif %}

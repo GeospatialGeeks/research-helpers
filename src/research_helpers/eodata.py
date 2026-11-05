@@ -32,7 +32,7 @@ S2_BANDS = {b: b for b in ("B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A
 S2_EE = {"B2": "B02", "B3": "B03", "B4": "B04", "B5": "B05", "B6": "B06", "B7": "B07", "B8": "B08", "B8A": "B8A", "B11": "B11", "B12": "B12", "SCL": "SCL"}
 S2 = [Route("stac", PC, "sentinel-2-l2a", S2_EE, "Same ESA product. Earth Engine's harmonised version removes the 1000 offset added from January 2022, so check the offset."),
       Route("stac", AWS, "sentinel-2-l2a", {"B2": "blue", "B3": "green", "B4": "red", "B8": "nir", "B11": "swir16", "B12": "swir22", "SCL": "scl"}, "Second copy, on Amazon.")]
-LANDSAT = [Route("stac", PC, "landsat-c2-l2", {"SR_B2": "blue", "SR_B3": "green", "SR_B4": "red", "SR_B5": "nir08", "SR_B6": "swir16", "SR_B7": "swir22", "QA_PIXEL": "qa_pixel"}, "Same USGS Collection 2 Level 2. Filter by platform.")]
+LANDSAT = [Route("stac", PC, "landsat-c2-l2", {"SR_B2": "blue", "SR_B3": "green", "SR_B4": "red", "SR_B5": "nir08", "SR_B6": "swir16", "SR_B7": "swir22", "ST_B10": "lwir11", "QA_PIXEL": "qa_pixel"}, "Same USGS Collection 2 Level 2. Filter by platform.")]
 ERA5 = [Route("cds", "reanalysis-era5-land", note="Needs a free key from the Copernicus Climate Data Store in ~/.cdsapirc."),
         Route("stac", PC, "era5-pds", note="Global ERA5 at about 31 km, not ERA5-Land at 9 km.")]
 CATALOGUE = {
