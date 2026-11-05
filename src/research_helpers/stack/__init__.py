@@ -473,12 +473,17 @@ def _site(d, docs, build):
         slug = head["slug"]
         p.unlink()
         if slug == "index":
-            (docs / "index.md").write_text(f"# {d['title']}\n\n{body}\n\n- [The whole guide on one page](full.md)\n- [Read or download the PDF](pdf.md)\n", encoding="utf8")
+            (docs / "index.md").write_text(f"# {d['title']}\n\n{body}\n\n- [The whole {w.get('kind', {'pamphlet': 'essay'}.get(d['layouts'][0], 'guide'))} on one page](full.md)\n- [Read or download the PDF](pdf.md)\n", encoding="utf8")
             continue
         (docs / f"{slug}.md").write_text(f"# {title}\n\n{body}", encoding="utf8")
         nav.append((title, f"{slug}.md"))
         whole.append(f"# {title}\n\n{re.sub(r'(?m)^(#+) ', lambda m: m[1] + '# ', body)}")
-    (docs / "full.md").write_text("\n\n".join(whole), encoding="utf8")
+    refs = _references(d)
+    if refs:
+        (docs / "references.md").write_text("# References\n\n" + refs, encoding="utf8")
+        whole.append("# References\n\n" + refs)
+    kind = w.get("kind", {"pamphlet": "essay"}.get(d["layouts"][0], "guide"))
+    (docs / "full.md").write_text(f"# The whole {kind} on one page\n\n" + "\n\n".join(re.sub(r"(?m)^(#+) ", lambda m: m[1] + "# ", x) for x in whole), encoding="utf8")
     pdf_name = w.get("pdf_name", f"{d['name']}.pdf")
     made = root / "build" / f"{d['name']}_{d['layouts'][0]}.pdf"
     pdf_url = w.get("pdf_url")
@@ -508,7 +513,9 @@ def _site(d, docs, build):
     (docs / "mathjax.js").write_text('window.MathJax={tex:{inlineMath:[["\\\\(","\\\\)"]],displayMath:[["\\\\[","\\\\]"]]},options:{ignoreHtmlClass:".*|",processHtmlClass:"arithmatex"}};document$&&document$.subscribe(()=>{if(window.MathJax&&MathJax.typesetPromise){MathJax.typesetClear&&MathJax.typesetClear();MathJax.typesetPromise()}});\n', encoding="utf8")
     shutil.copy2(HERE / "pdfview.js", docs / "pdfview.js")
     tail = [(w["home_label"], w["home"])] if w.get("home") else []
-    entries = "\n".join(f"  - {json_str(a)}: {b}" for a, b in [("Home", "index.md"), *nav, ("Whole guide", "full.md"), *nb_tail, ("PDF", "pdf.md"), *tail])
+    top = [("Home", "index.md"), (f"The whole {kind} on one page", "full.md"), ("PDF", "pdf.md"), *nb_tail]
+    chapters = "\n".join(f"      - {json_str(a)}: {b}" for a, b in [*nav, *([("References", "references.md")] if refs else [])])
+    entries = "\n".join(f"  - {json_str(a)}: {b}" for a, b in top) + "\n  - Chapters:\n" + chapters + "".join(f"\n  - {json_str(a)}: {b}" for a, b in tail)
     (root / "build/mkdocs.yml").write_text(f"""site_name: {json_str(w.get('site_name', d['title']))}
 docs_dir: site_src
 site_dir: site
@@ -582,6 +589,29 @@ def refresh_skin(templates, stylesheets, scripts):
     (stylesheets / "rh_spacing.css").write_text(site_css(), encoding="utf8")
     shutil.copy2(HERE / "skin/site.js", scripts / "site.js")
     print("skin copied to", templates, stylesheets, scripts, flush=True)
+
+
+def _references(d):
+    """Markdown list of every work cited in the document's chapters, formatted by pandoc citeproc, DOIs as links."""
+    bib = d.get("bibliography")
+    if not bib:
+        return ""
+    src = d["_src"]
+    keys = []
+    for c in d.get("chapters", []):
+        f = src / f"{c}.tex"
+        if f.exists():
+            for m in re.finditer(r"\\[a-zA-Z]*cite[a-zA-Z]*\*?(?:\[[^\]]*\])*\{([^}]+)\}", f.read_text(encoding="utf8")):
+                keys += [k.strip() for k in m[1].split(",") if k.strip() not in keys]
+    if not keys:
+        return ""
+    md = "---\nnocite: |\n  " + ", ".join(f"@{k}" for k in keys) + "\n---\n"
+    r = subprocess.run([shutil.which("pandoc"), "-f", "markdown", "-t", PANDOC_SITE, "--wrap=none", "--citeproc", f"--bibliography={src / bib}"],
+                       input=md.encode("utf8"), capture_output=True, check=True)
+    text = r.stdout.decode("utf8").replace("\r\n", "\n")
+    text = re.sub(r"(?m)^:::.*$|^<div[^>]*>$|^</div>$", "", text)
+    text = re.sub(r"<(https?://[^>]+)>", r"[\1](\1)", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
 
 
 def json_str(s):

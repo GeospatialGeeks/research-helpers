@@ -232,7 +232,7 @@ def to_markdown(tex, project, page_of, numbers):
     pandoc = shutil.which("pandoc")
     args = [pandoc, "-f", "latex", "-t", project.to or PANDOC_TO, "--wrap=none"]
     if project.bibliography:
-        args += ["--citeproc", f"--bibliography={project.bibliography}"] + ([f"--csl={project.csl}"] if project.csl else [])
+        args += ["--citeproc", f"--bibliography={project.bibliography}", "-M", "suppress-bibliography=true"] + ([f"--csl={project.csl}"] if project.csl else [])
     r = subprocess.run(args, input=(project.macros + unprotect(tex)).encode("utf8"), capture_output=True)
     if r.returncode:
         raise RuntimeError(r.stderr.decode("utf8", "replace")[:800])
