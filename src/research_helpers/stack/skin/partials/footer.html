@@ -8,7 +8,7 @@
 <footer class="aa-footer">
   <div class="aa-bar">
     <div>&copy; {{ s.year }} {{ s.owner }}.{% if s.section %} <a href="{{ s.section_url }}">More {{ s.section | lower }}</a>.{% endif %}{% if s.source %} <a href="{{ s.source }}">Source on GitHub</a>.{% endif %}</div>
-    <div>{% for item in s.links %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
+    <div>{% for item in s.links %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url if (':' in item.url or item.url[:1] == '/') else (item.url | url) }}">{{ item.label }}</a>{% endfor %}</div>
   </div>
 </footer>
 {% if s.edit %}
