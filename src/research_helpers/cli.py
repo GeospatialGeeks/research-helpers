@@ -32,6 +32,13 @@ def main(argv=None):
     s = sub.add_parser("scripts", help="reference of scripts from their docstrings"); s.add_argument("root"); s.add_argument("--out", default="pipeline_reference.md")
     s.add_argument("--glob", default="**/*.py")
 
+    rl = sub.add_parser("runlog", help="run a command and append what it used to a compute log")
+    rl.add_argument("--log", default="records/compute"); rl.add_argument("--name", default=""); rl.add_argument("--question", default="")
+    rl.add_argument("--project", default=""); rl.add_argument("argv", nargs=argparse.REMAINDER)
+    rs = sub.add_parser("runlog-slurm", help="after Slurm jobs end: keep sacct/seff and add a summary to the compute log")
+    rs.add_argument("jobids", nargs="+"); rs.add_argument("--log", default="records/compute"); rs.add_argument("--name", default="")
+    rs.add_argument("--question", default=""); rs.add_argument("--project", default="")
+    rr = sub.add_parser("runlog-report", help="compile the compute log into runs.md and runs.csv"); rr.add_argument("log", nargs="?", default="records/compute")
     q = sub.add_parser("queue", help="run jobs one after another after a condition")
     q.add_argument("jobs_file"); q.add_argument("--log", default="queue.log"); q.add_argument("--after-pid", type=int)
     q.add_argument("--after-file"); q.add_argument("--after-text", default="finished"); q.add_argument("--wait-for-pattern")
@@ -108,6 +115,16 @@ def main(argv=None):
         root = pathlib.Path(a.root)
         files = sorted(str(p.relative_to(root)) for p in root.glob(a.glob))
         pathlib.Path(a.out).write_text(script_reference(files, root), encoding="utf-8"); print(a.out)
+    if a.cmd == "runlog":
+        from .runlog import command
+        argv = a.argv[1:] if a.argv[:1] == ["--"] else a.argv
+        return command(argv, a.log, a.name, a.question, a.project)
+    if a.cmd == "runlog-slurm":
+        from .runlog import slurm
+        slurm(a.jobids, a.log, a.name, a.question, a.project)
+    if a.cmd == "runlog-report":
+        from .runlog import report
+        report(a.log)
     if a.cmd == "queue":
         from .jobqueue import run_queue, jobs_from_file
         run_queue(jobs_from_file(a.jobs_file), a.log, after_pid=a.after_pid, after_file=a.after_file, after_text=a.after_text,
