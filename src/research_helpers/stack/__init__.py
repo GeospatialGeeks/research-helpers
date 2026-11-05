@@ -530,7 +530,7 @@ def skin_settings(d):
         "brand_first": site.get("brand_first", ""), "brand_second": site.get("brand_second", ""), "brand_url": site.get("brand_url", "/"),
         "owner": w.get("owner", site.get("owner", d.get("author", ""))), "year": datetime.date.today().year,
         "nav": nav, "section": section, "section_url": w.get("section_url", next((x["url"] for x in nav if x["label"] == section), "/")),
-        "links": [{"label": a, "url": b} for a, b in site.get("links", [])], "source": w.get("source", ""),
+        "links": [{"label": a, "url": b} for a, b in site.get("links", [])], "source": w.get("source", ""), "edit": w.get("edit_url", ""),
     }
 
 

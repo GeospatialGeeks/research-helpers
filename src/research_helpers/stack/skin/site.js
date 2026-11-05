@@ -55,3 +55,16 @@ document.addEventListener("DOMContentLoaded", function () {
     var c = document.querySelector(".md-content"); if (c) new ResizeObserver(remeasure).observe(c);
   });
 })();
+
+// Admin edit bar, shared with the main site: ?admin=on shows it on this browser, ?admin=off hides it.
+(function () {
+  try {
+    var q = new URLSearchParams(location.search).get("admin");
+    if (q === "on") localStorage.setItem("admin", "1");
+    if (q === "off") localStorage.removeItem("admin");
+    if (localStorage.getItem("admin") !== "1") return;
+  } catch (e) { return; }
+  function show() { document.querySelectorAll("[data-admin-edit]").forEach(function (el) { el.hidden = false; }); }
+  document.addEventListener("DOMContentLoaded", show);
+  if (window.document$) document$.subscribe(show);
+})();

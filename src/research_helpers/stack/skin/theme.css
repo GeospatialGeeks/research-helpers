@@ -97,3 +97,12 @@ html.aa-panels-hidden .md-content { max-width: 52rem; margin-inline: auto; }
 .aa-pager a:hover { border-color: var(--accent); }
 .aa-pager span { display: block; color: var(--muted); font-size: 13px; }
 @media (max-width: 600px) { .aa-pager a { max-width: 100%; } }
+
+/* Admin edit bar: shown only in admin mode (site.js, ?admin=on) */
+.admin-edit { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; max-width: calc(100vw - 32px);
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 4px 16px rgba(0,0,0,.12); font-family: var(--sans); font-size: 13px; }
+.admin-edit[hidden] { display: none; }
+.admin-edit span:first-child { font-weight: 600; color: var(--rust); }
+.admin-edit a { color: var(--accent); }
+.admin-src { color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+@media print { .admin-edit { display: none !important; } }

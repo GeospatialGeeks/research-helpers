@@ -11,3 +11,6 @@
     <div>{% for item in s.links %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url }}">{{ item.label }}</a>{% endfor %}</div>
   </div>
 </footer>
+{% if s.edit %}
+<div class="admin-edit" data-admin-edit hidden><span>Admin</span> <a href="{{ s.edit }}">Edit the LaTeX source in the browser editor</a> <span class="admin-src">rebuild with build_guides.py</span></div>
+{% endif %}
