@@ -91,7 +91,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--sans); }
 html.aa-panels-hidden .md-sidebar { display: none; }
 html.aa-panels-hidden .md-content { max-width: 52rem; margin-inline: auto; }
 /* Reading on from one page to the next */
-.aa-pager { max-width: 61rem; margin: 2rem auto 0; padding: 0 .2rem; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 15px; line-height: 1.4; }
+.aa-pager { width: 100%; box-sizing: border-box; max-width: 61rem; margin: 2rem auto 0; padding: 0 .2rem; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 15px; line-height: 1.4; }
 .aa-pager a { color: var(--accent); flex: 1 1 240px; max-width: 48%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; }
 .aa-pager a.next { text-align: right; margin-left: auto; }
 .aa-pager a:hover { border-color: var(--accent); }

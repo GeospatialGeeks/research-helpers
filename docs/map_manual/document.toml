@@ -6,6 +6,8 @@ source = "tex"
 chapters = ["ch_anatomy", "ch_stack", "ch_projection", "ch_colour", "ch_components", "ch_workflow"]
 figures = "figures"
 [web]
+edit_url = "https://github.dev/GeospatialGeeks/research-helpers/tree/main/docs/map_manual"
+rename_url = "https://github.com/AhmadAmmar/AhmadAmmar.github.io/actions/workflows/rename-page.yml"
 site_url = "https://ahmadammar.github.io"
 parent_url = "/teaching/"
 site_name = "Making maps that can be repeated and published"
