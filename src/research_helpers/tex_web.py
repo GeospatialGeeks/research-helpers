@@ -359,7 +359,8 @@ def build_pages(project):
         for n, (_, caption, label) in enumerate(items):
             text = to_markdown(prepare(caption, number, numbers, project), project, page_of, numbers).strip().replace("\n", " ") if caption else ""
             # alt text from the rendered caption: link text kept, link targets and Markdown marks dropped
-            alt = re.sub(r"\s+", " ", re.sub(r"[`*_\[\]<>\\$]", "", re.sub(r"\]\([^)]*\)", "]", text)))[:200].strip() or "Figure"
+            plain = re.sub(r"(?<![A-Za-z0-9\\])_|_(?![A-Za-z0-9])", "", text).replace("\\_", "_")   # drop emphasis marks, keep names like mirror_of
+            alt = re.sub(r"\s+", " ", re.sub(r"[`*\[\]<>\\$]", "", re.sub(r"\]\([^)]*\)", "]", plain)))[:200].strip() or "Figure"
             head = f"**Figure {numbers.get(label, '')}.** " if label else ""
             anchor = f'<a id="{label}"></a>\n\n' if label else ""
             md = md.replace(f"FIGMARK{n}END", f"{anchor}![{alt}]({project.url}fig/f-{str(figure_no + n).zfill(width)}.png)\n\n{head}{text}")
