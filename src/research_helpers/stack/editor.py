@@ -96,7 +96,7 @@ def doctor():
     to a missing or different tool. The same list is in environment-stack.yml for a clean setup."""
     import importlib.metadata as md
     tools = {"pandoc": ["--version"], "xelatex": ["--version"], "latexmk": ["-v"], "xdvipdfmx": ["--version"],
-             "biber": ["--version"], "git": ["--version"], "zensical": ["--version"]}
+             "biber": ["--version"], "pdftocairo": ["-v"], "git": ["--version"], "zensical": ["--version"]}
     bad = 0
     for t, args in tools.items():
         exe = shutil.which(t) or (str(Path(sys.prefix) / "Scripts" / f"{t}.exe") if (Path(sys.prefix) / "Scripts" / f"{t}.exe").exists() else None)
