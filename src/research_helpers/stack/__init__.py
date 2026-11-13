@@ -175,6 +175,20 @@ def load(project):
     return d
 
 
+def font_commands():
+    """Fonts for xelatex books. The open-licence files shipped in stack/fonts (Caladea, metric-compatible with
+    Cambria; Inconsolata) are loaded by path, so a PDF comes out the same on Windows, macOS and a clean Linux
+    machine such as GitHub Actions. tokens.toml [type] may name other installed fonts instead."""
+    ty = tokens()["type"]
+    fonts = (HERE / "fonts").as_posix() + "/"
+    main, mono = ty.get("font_main", "Caladea"), ty.get("font_mono", "Inconsolata")
+    m = (f"\\setmainfont{{Caladea}}[Path={fonts},Extension=.ttf,UprightFont=*-Regular,BoldFont=*-Bold,"
+         f"ItalicFont=*-Italic,BoldItalicFont=*-BoldItalic]" if main == "Caladea" else f"\\setmainfont{{{main}}}")
+    t = (f"\\setmonofont{{Inconsolata.ttf}}[Path={fonts},Scale=MatchLowercase]" if mono == "Inconsolata"
+         else f"\\setmonofont{{{mono}}}")
+    return m + t
+
+
 def tokens():
     return tomllib.loads((HERE / "tokens.toml").read_text(encoding="utf8"))
 
@@ -226,8 +240,7 @@ def pdf(project, *wanted):
             extra.append(f"\\lstset{{inputpath={{{src.as_posix()}}}}}")
         engine = d.get("engine", "xelatex" if name in BOOK_LAYOUTS else "pdflatex")
         if engine == "xelatex" and name in BOOK_LAYOUTS:
-            ty = tokens()["type"]
-            extra.insert(0, f"\\setmainfont{{{ty['font_main']}}}\\setmonofont{{{ty['font_mono']}}}")
+            extra.insert(0, font_commands())
         d["_extra"] = "\n".join(extra) + "\n"
         parts = d.get("chapters") if name == "manual" and d.get("chapters") else [d["body"]] if d.get("body") else d.get("chapters", ["body"])
         d["_body"] = "\n".join(f"\\input{{{c}}}" for c in parts)

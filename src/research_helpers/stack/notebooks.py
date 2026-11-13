@@ -15,11 +15,14 @@ Building (stack.pdf and stack.web call this first, and only rerun a notebook who
      figures as images. generated/nb_<name>.tex holds the whole notebook.
   3. Chapters \\input these files, so the PDF and the web show exactly the code and the results the notebook made.
   4. build/notebooks/<name>.ipynb is the executed notebook readers download (the web copies it next to the pages).
+  5. frozen/<name>.ipynb (+ .sha) is a committed copy of the last run. With RH_FROZEN=1 (as in CI) notebooks are
+     not run: the frozen run is used, as Quarto does with _freeze, so a clean machine needs neither data nor time.
 The .py file stays the one source: it diffs cleanly in git, and anyone can open the .ipynb in Jupyter or Colab.
 """
 import base64
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -109,6 +112,16 @@ def build(d):
         digest = hashlib.sha256(py.read_bytes()).hexdigest()[:16]
         stamp = out / f"{name}.sha"
         ipynb = out / f"{name}.ipynb"
+        frozen = root / "frozen" / f"{name}.ipynb"          # committed: lets a clean machine (CI) build without running
+        fsha = frozen.with_suffix(".sha")
+        if not (stamp.exists() and stamp.read_text() == digest and ipynb.exists()) and os.environ.get("RH_FROZEN") == "1":
+            if not frozen.exists():
+                raise RuntimeError(f"{frozen} is missing: run this build once where the notebook can run, and commit frozen/")
+            if not fsha.exists() or fsha.read_text().strip() != digest:
+                print(f"WARNING notebook {name}: source changed since its outputs were frozen; showing the frozen run. "
+                      "Rebuild on a machine with the data to refresh them.", flush=True)
+            shutil.copy2(frozen, ipynb)
+            stamp.write_text(digest)
         if not (stamp.exists() and stamp.read_text() == digest and ipynb.exists()):
             nb = jupytext.read(py)
             nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
@@ -117,6 +130,10 @@ def build(d):
             nbformat.write(nb, ipynb)
             stamp.write_text(digest)
             print("notebook run", name, flush=True)
+        if os.environ.get("RH_FROZEN") != "1" and (not fsha.exists() or fsha.read_text().strip() != digest or not frozen.exists()):
+            frozen.parent.mkdir(exist_ok=True)              # keep the frozen copy current wherever the notebook ran
+            shutil.copy2(ipynb, frozen)
+            fsha.write_text(digest + "\n")
         nb = nbformat.read(ipynb, as_version=4)
         sections = cells_to_tex(nb, name, figdir)
         for i, (title, tex) in enumerate(sections, 1):

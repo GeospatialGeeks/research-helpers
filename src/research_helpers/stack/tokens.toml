@@ -19,8 +19,8 @@ line = 1.12
 [type]
 code_size_pdf = "scriptsize"
 body_web = "0.95rem"
-font_main = "Cambria"
-font_mono = "Consolas"
+font_main = "Caladea"   # shipped in stack/fonts (OFL); metric-compatible with Cambria
+font_mono = "Inconsolata"   # shipped in stack/fonts (OFL)
 
 [site]
 # The wider site every web build sits in: its bar, footer and links.
