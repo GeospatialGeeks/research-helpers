@@ -1,6 +1,8 @@
 """Studio: edit every chapter of a document on one page, each beside its rendered preview.
 
-    python -m research_helpers.stack studio <document folder or any .tex in it> [port]
+    python -m research_helpers.stack studio [<document folder or any .tex in it>] [port]
+
+Without a document it serves a hub of every document under ~/dev at http://127.0.0.1:8770/.
 
 Opens http://127.0.0.1:<port> (local only). Every chapter listed in document.toml is shown in order,
 top to bottom, as an editor (word-wrapped) with its rendering beside it, so you read and edit the
@@ -12,6 +14,7 @@ Files are only written when you save, and only the chapters you changed.
 """
 import json
 import mimetypes
+import os
 import re
 import shutil
 import subprocess
@@ -20,6 +23,7 @@ import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 from . import load
 from .editor import find_document
@@ -49,7 +53,7 @@ nav a.dirty::after{content:" ●";color:#c2410c}
 .out h1,.out h2,.out h3{line-height:1.25}.out p:hover{outline:1px dashed var(--line);cursor:pointer}
 @media (max-width:900px){.layout{grid-template-columns:1fr}nav{display:none}.ch{grid-template-columns:1fr}}
 </style></head><body>
-<header><b>%TITLE%</b><span id="state">all saved</span><span class="sp"></span>
+<header><a href="/" style="color:inherit">All documents</a> <b>%TITLE%</b><span id="state">all saved</span><span class="sp"></span>
 <label><input type="checkbox" id="sync" checked> scroll preview with source</label>
 <button id="save">Save (Ctrl+S)</button></header>
 <div class="layout"><nav id="nav"></nav><main id="main"></main></div>
@@ -60,7 +64,7 @@ const main = document.getElementById("main"), nav = document.getElementById("nav
 function setState(){ state.textContent = dirty.size ? dirty.size + " chapter(s) not saved" : "all saved"; document.title = (dirty.size?"● ":"") + "Studio: %TITLE%";
   document.querySelectorAll("nav a.chap").forEach(a=>a.classList.toggle("dirty", dirty.has(a.dataset.c))); }
 async function render(name){
-  const r = await fetch("/render", {method:"POST", body: JSON.stringify({name, text: eds[name].getValue()})});
+  const r = await fetch("render", {method:"POST", body: JSON.stringify({name, text: eds[name].getValue()})});
   const out = document.getElementById("out-"+name); out.innerHTML = await r.text();
   if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([out]);
   out.querySelectorAll("p,li,h1,h2,h3,h4").forEach(el=>el.ondblclick=()=>jump(name, el.textContent));
@@ -84,7 +88,7 @@ function buildNav(){
 }
 async function save(){
   for (const name of [...dirty]) {
-    const r = await fetch("/save", {method:"POST", body: JSON.stringify({name, text: eds[name].getValue()})});
+    const r = await fetch("save", {method:"POST", body: JSON.stringify({name, text: eds[name].getValue()})});
     if (r.ok) dirty.delete(name); else alert("could not save " + name + ": " + await r.text());
   }
   setState();
@@ -102,79 +106,159 @@ chapters.forEach(c=>{
     if (el) { document.querySelectorAll(".out .here").forEach(x=>x.classList.remove("here")); el.style.background="rgba(15,110,110,.08)"; setTimeout(()=>el.style.background="",900); } });
   render(c.name);
 });
+if (location.hash) setTimeout(()=>{const e=document.querySelector(location.hash); if(e) e.scrollIntoView();}, 600);
 document.getElementById("save").onclick = save;
 addEventListener("keydown", e=>{ if ((e.ctrlKey||e.metaKey) && e.key==="s") { e.preventDefault(); save(); } });
 addEventListener("beforeunload", e=>{ if (dirty.size) { e.preventDefault(); e.returnValue=""; } });
 </script></body></html>"""
 
 
-def studio(target=".", port="8770"):
-    doc = find_document(target)
-    if doc is None:
-        sys.exit(f"no document.toml at or above {target}")
-    d = load(doc)
-    src = d["_src"]
-    figs = [doc / d.get("figures", "figures"), src]
-    files = {c: src / f"{c}.tex" for c in d.get("chapters", [])}
-    if not files:
-        sys.exit("document.toml lists no chapters")
-    macros = "".join((src / (m if m.endswith(".tex") else m + ".tex")).read_text(encoding="utf8") + "\n"
-                     for m in d.get("defines", []))
-    pandoc = shutil.which("pandoc")
+ROOTS = [Path.home() / "dev"]  # where the hub looks for documents (document.toml)
 
-    def render(text):
-        # \input'd generated tables or snippets are shown as a note; figures point at /fig/
+
+class Doc:
+    """One document: its chapters, macros, figure folders and the page that edits them."""
+
+    def __init__(self, doc):
+        d = load(doc)
+        self.doc, self.src = doc, d["_src"]
+        self.figs = [doc / d.get("figures", "figures"), self.src]
+        self.files = {c: self.src / f"{c}.tex" for c in d.get("chapters", [])}
+        self.title = d.get("title", doc.name)
+        self.macros = "".join((self.src / (m if m.endswith(".tex") else m + ".tex")).read_text(encoding="utf8") + "\n"
+                              for m in d.get("defines", []))
+
+    def page(self):
+        chapters = [{"name": c, "file": str(f.relative_to(self.doc.parent)).replace("\\", "/"),
+                     "text": f.read_text(encoding="utf8")} for c, f in self.files.items()]
+        return PAGE.replace("%TITLE%", self.title).replace("%CHAPTERS%", json.dumps(chapters))
+
+    def render(self, text):
+        # \input'd generated tables or snippets are shown as a note; figures point at fig/ under this document
         text = re.sub(r"\\input\{([^}]*)\}", r"\\textit{[input: \1]}", text)
-        r = subprocess.run([pandoc, "-f", "latex", "-t", "html5", "--mathjax", "--wrap=none"],
-                           input=(macros + text).encode("utf8"), capture_output=True)
-        html = r.stdout.decode("utf8")
-        html = re.sub(r'src="([^"/:]+?)"', r'src="/fig/\1"', html)
+        r = subprocess.run([shutil.which("pandoc"), "-f", "latex", "-t", "html5", "--mathjax", "--wrap=none"],
+                           input=(self.macros + text).encode("utf8"), capture_output=True)
+        html = re.sub(r'src="([^"/:]+?)"', r'src="fig/\1"', r.stdout.decode("utf8"))
         if r.returncode:
             html = f"<pre style='color:#b91c1c'>{r.stderr.decode('utf8', 'replace')}</pre>" + html
         return html
 
-    page = (PAGE.replace("%TITLE%", d.get("title", doc.name))
-            .replace("%CHAPTERS%", json.dumps([{"name": c, "file": str(f.relative_to(doc.parent)).replace("\\", "/"),
-                                                "text": f.read_text(encoding="utf8")} for c, f in files.items()])))
+    def figure(self, name):
+        for folder in self.figs:
+            for f in [folder / name, *folder.glob(name + ".*")]:
+                if f.is_file() and f.suffix.lower() in (".png", ".jpg", ".jpeg", ".svg", ".gif"):
+                    return f
+
+
+def documents(extra=()):
+    found = {}
+    for root in ROOTS:
+        for t in root.rglob("document.toml") if root.exists() else []:
+            if any(p in ("build", "node_modules", ".git") for p in t.relative_to(root).parts):
+                continue
+            found[t.parent.relative_to(root).as_posix().replace("/", "~")] = t.parent
+    for doc in extra:
+        if doc and not any(v.resolve() == Path(doc).resolve() for v in found.values()):
+            found[Path(doc).name] = Path(doc)
+    return found
+
+
+def studio(target=None, port="8770"):
+    """With a document (or a file in one): open it. Without: the hub of every document under ~/dev, which stays
+    running; /open?file=<path to a .tex> (used by the site's Admin bar) opens that document at that chapter."""
+    one = find_document(target) if target else None
+    if target and one is None:
+        sys.exit(f"no document.toml at or above {target}")
+    docs = documents([one])
+    loaded = {}
+
+    def key_of(doc):
+        return next((k for k, v in docs.items() if doc and v.resolve() == Path(doc).resolve()), None)
+
+    def index():
+        rows = "".join(f'<li><a href="/d/{k}/">{k.replace("~", " / ")}</a></li>' for k in sorted(docs))
+        return ("<!doctype html><meta charset=utf-8><title>Studio</title><style>body{font:16px/1.6 system-ui;margin:40px auto;max-width:760px;"
+                "padding:0 16px;background:#fbfaf7;color:#1d1d1f}@media(prefers-color-scheme:dark){body{background:#18181a;color:#e8e6e1}a{color:#5cc3c3}}"
+                f"</style><h1>Studio</h1><p>{len(docs)} documents with a document.toml.</p><ul>{rows}</ul>")
 
     class H(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
 
-        def _send(self, body, kind="text/html; charset=utf-8", code=200):
+        def _send(self, body, kind="text/html; charset=utf-8", code=200, extra=()):
             b = body if isinstance(body, bytes) else body.encode("utf8")
             self.send_response(code)
             self.send_header("Content-Type", kind)
             self.send_header("Cache-Control", "no-store")
+            for k, v in extra:
+                self.send_header(k, v)
             self.end_headers()
             self.wfile.write(b)
 
+        def _route(self):
+            u = urlparse(self.path)
+            if u.path == "/open":
+                f = Path(unquote(parse_qs(u.query).get("file", [""])[0]))
+                doc = find_document(f)
+                if doc is None:
+                    return "404", None
+                key = key_of(doc)
+                if key is None:
+                    key = doc.name
+                    docs[key] = doc
+                return "redirect", f"/d/{key}/#ch-{f.stem}"
+            parts = u.path.strip("/").split("/", 2)
+            if parts[0] == "d" and len(parts) >= 2 and parts[1] in docs:
+                if parts[1] not in loaded:
+                    loaded[parts[1]] = Doc(docs[parts[1]])
+                return "doc", (loaded[parts[1]], parts[2] if len(parts) == 3 else "")
+            return ("index", None) if u.path == "/" else ("404", None)
+
         def do_GET(self):
-            if self.path == "/":
-                return self._send(page)
-            if self.path.startswith("/fig/"):
-                name = Path(self.path[5:]).name
-                for folder in figs:
-                    for f in [folder / name, *folder.glob(name + ".*")]:
-                        if f.is_file() and f.suffix.lower() in (".png", ".jpg", ".jpeg", ".svg", ".gif"):
-                            return self._send(f.read_bytes(), mimetypes.guess_type(f.name)[0])
+            kind, arg = self._route()
+            if kind == "index":
+                return self._send(index())
+            if kind == "redirect":
+                return self._send("", code=302, extra=[("Location", arg)])
+            if kind == "doc":
+                doc, rest = arg
+                if rest == "":
+                    loaded.pop(self.path.strip("/").split("/")[1], None)  # re-read files on every open
+                    return self._send(Doc(doc.doc).page())
+                if rest.startswith("fig/"):
+                    f = doc.figure(Path(rest[4:]).name)
+                    if f:
+                        return self._send(f.read_bytes(), mimetypes.guess_type(f.name)[0])
             self._send("not found", "text/plain", 404)
 
         def do_POST(self):
-            data = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-            f = files.get(data.get("name"))
+            kind, arg = self._route()
+            if kind != "doc":
+                return self._send("not found", "text/plain", 404)
+            doc, rest = arg
+            try:
+                data = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            except (ValueError, TypeError):
+                return self._send("bad request", "text/plain", 400)
+            f = doc.files.get(data.get("name"))
             if f is None:
                 return self._send("unknown chapter", "text/plain", 400)
-            if self.path == "/render":
-                return self._send(render(data["text"]))
-            if self.path == "/save":
+            if rest == "render":
+                return self._send(doc.render(data["text"]))
+            if rest == "save":
                 f.write_text(data["text"], encoding="utf8", newline="\n")
                 print("saved", f, flush=True)
                 return self._send("ok", "text/plain")
             self._send("not found", "text/plain", 404)
 
-    server = ThreadingHTTPServer(("127.0.0.1", int(port)), H)
-    url = f"http://127.0.0.1:{port}/"
-    print("studio for", doc, "at", url, "(Ctrl+C to stop)", flush=True)
-    threading.Timer(0.5, lambda: webbrowser.open(url)).start()
-    server.serve_forever()
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", int(port)), H)
+    except OSError:  # the hub is already running: just open the page
+        server = None
+    key = key_of(one)
+    url = f"http://127.0.0.1:{port}/" + (f"d/{key}/" if key else "")
+    if os.environ.get("RH_NO_BROWSER") != "1":
+        threading.Timer(0.5, lambda: webbrowser.open(url)).start()
+    if server:
+        print("studio at", url, f"({len(docs)} documents; Ctrl+C to stop)", flush=True)
+        server.serve_forever()
