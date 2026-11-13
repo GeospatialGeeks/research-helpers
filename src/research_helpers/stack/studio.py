@@ -55,7 +55,8 @@ nav a.dirty::after{content:" ●";color:#c2410c}
 </style></head><body>
 <header><a href="/" style="color:inherit">All documents</a> <b>%TITLE%</b><span id="state">all saved</span><span class="sp"></span>
 <label><input type="checkbox" id="sync" checked> scroll preview with source</label>
-<button id="save">Save (Ctrl+S)</button></header>
+<button id="save">Save (Ctrl+S)</button> <button id="pub" title="save, rebuild this document, commit and push">Save and publish</button></header>
+<pre id="log" hidden style="margin:0;max-height:40vh;overflow:auto;padding:8px 16px;font:12px Consolas,monospace;background:var(--line)"></pre>
 <div class="layout"><nav id="nav"></nav><main id="main"></main></div>
 <script>
 const chapters = %CHAPTERS%;
@@ -108,6 +109,13 @@ chapters.forEach(c=>{
 });
 if (location.hash) setTimeout(()=>{const e=document.querySelector(location.hash); if(e) e.scrollIntoView();}, 600);
 document.getElementById("save").onclick = save;
+document.getElementById("pub").onclick = async ()=>{
+  await save(); if (dirty.size) return;
+  if (!confirm("Rebuild this document, commit and push it to the live site?")) return;
+  const log = document.getElementById("log"); log.hidden = false; log.textContent = "publishing… (the build takes a minute or two)\n"; state.textContent = "publishing";
+  const r = await fetch("publish", {method:"POST", body:"{}"}); log.textContent += await r.text();
+  state.textContent = r.ok ? "published: commit pushed, the site deploys in a minute" : "publish failed: see the log"; log.scrollTop = log.scrollHeight;
+};
 addEventListener("keydown", e=>{ if ((e.ctrlKey||e.metaKey) && e.key==="s") { e.preventDefault(); save(); } });
 addEventListener("beforeunload", e=>{ if (dirty.size) { e.preventDefault(); e.returnValue=""; } });
 </script></body></html>"""
@@ -161,6 +169,45 @@ def documents(extra=()):
         if doc and not any(v.resolve() == Path(doc).resolve() for v in found.values()):
             found[Path(doc).name] = Path(doc)
     return found
+
+
+def _git(repo, *args):
+    return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, encoding="utf8", errors="replace")
+
+
+def publish(doc):
+    """Rebuild one document with its repository's own web command (.stack-web), then commit and push only
+    what this rebuild changed plus the document's sources. Refuses when the repository has no .stack-web
+    (no public site) or the document matches a pattern in .stack-hold (work held back from publication)."""
+    import fnmatch
+    repo = next((p for p in [doc, *doc.parents] if (p / ".git").exists()), None)
+    if repo is None or not (repo / ".stack-web").exists():
+        return False, "not published: this repository has no .stack-web, so it has no public site to update"
+    rel = doc.resolve().relative_to(repo.resolve()).as_posix()
+    hold = (repo / ".stack-hold").read_text(encoding="utf8").split() if (repo / ".stack-hold").exists() else []
+    if any(fnmatch.fnmatch(rel, h) for h in hold):
+        return False, f"not published: {rel} is held back in .stack-hold"
+    def changed():
+        return {l[3:].strip('"') for l in _git(repo, "status", "--porcelain", "-uall").stdout.splitlines()}
+    before = changed()
+    cmd = (repo / ".stack-web").read_text(encoding="utf8").strip().format(name=doc.name, path=doc)
+    args = cmd.split()
+    if args[0] == "python":
+        args[0] = sys.executable
+    b = subprocess.run(args, cwd=repo, capture_output=True, text=True, encoding="utf8", errors="replace",
+                       env={**os.environ, "PYTHONIOENCODING": "utf8"})
+    log = "$ " + cmd + "\n" + "\n".join((b.stdout + b.stderr).splitlines()[-15:]) + "\n"
+    if b.returncode:
+        return False, log + "build failed: nothing committed"
+    files = sorted((changed() - before) | {f for f in changed() if f.startswith(rel + "/") and "/build/" not in f})
+    files = [f for f in files if not any(fnmatch.fnmatch(f, h) or f.startswith(h.rstrip("*")) for h in hold)]
+    if not files:
+        return True, log + "nothing changed: no commit"
+    _git(repo, "add", "--", *files)
+    c = _git(repo, "-c", "user.name=Ahmad Ammar", "-c", "user.email=ahmadammargeo@gmail.com", "commit", "-m", f"Update {doc.name}")
+    pu = _git(repo, "push")
+    log += f"committed {len(files)} files\n" + c.stdout[-300:] + pu.stderr[-300:]
+    return pu.returncode == 0, log + ("pushed" if pu.returncode == 0 else "push failed")
 
 
 def studio(target=None, port="8770"):
@@ -240,6 +287,9 @@ def studio(target=None, port="8770"):
                 data = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             except (ValueError, TypeError):
                 return self._send("bad request", "text/plain", 400)
+            if rest == "publish":
+                ok, text = publish(doc.doc)
+                return self._send(text, "text/plain; charset=utf-8", 200 if ok else 500)
             f = doc.files.get(data.get("name"))
             if f is None:
                 return self._send("unknown chapter", "text/plain", 400)
