@@ -567,7 +567,29 @@ def skin_settings(d):
         "owner": w.get("owner", site.get("owner", d.get("author", ""))), "year": datetime.date.today().year,
         "nav": nav, "section": section, "section_url": w.get("section_url", next((x["url"] for x in nav if x["label"] == section), "/")),
         "links": [{"label": a, "url": b} for a, b in site.get("links", [])], "source": w.get("source", ""), "edit": w.get("edit_url", ""), "rename": w.get("rename_url", ""),
+        **_edit_targets(d, w),
     }
+
+
+def _edit_targets(d, w):
+    """Per-page edit links: each chapter page opens its own .tex file, on this laptop in VS Code (LaTeX Workshop
+    gives the live PDF preview) or in the browser editor. Pages that are not chapters open the first chapter."""
+    src, chapters = d.get("_src"), d.get("chapters", [])
+    if not src or not chapters:
+        return {}
+    try:
+        top = Path(subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=src, capture_output=True, text=True).stdout.strip())
+        rel = Path(src).resolve().relative_to(top.resolve()).as_posix()
+    except (ValueError, OSError):
+        return {}
+    slugs = w.get("slugs", {})
+    files = {slugs.get(c, c.replace("_", "-")): f"{rel}/{c}.tex" for c in chapters}
+    m = re.match(r"https://github\.dev/([^/]+/[^/]+)/", w.get("edit_url", ""))
+    if not m:  # no edit_url set: take the repository from its GitHub remote, so every project gets the links
+        remote = subprocess.run(["git", "remote", "get-url", "origin"], cwd=src, capture_output=True, text=True).stdout.strip()
+        m = re.search(r"github\.com[:/]([^/]+/[^/.]+?)(?:\.git)?$", remote)
+    return {"tex_files": files, "tex_first": f"{rel}/{chapters[0]}.tex", "local_root": top.as_posix(),
+            "web_editor": f"https://github.dev/{m.group(1)}/blob/main/" if m else ""}
 
 
 def write_skin(folder, docs):
