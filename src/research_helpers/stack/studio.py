@@ -377,6 +377,23 @@ def publish(doc):
 
     def changed():
         return {l[3:].strip('"') for l in _git(repo, "status", "--porcelain", "-uall").stdout.splitlines()}
+    if (repo / ".stack-ci").exists():
+        # the repository builds itself on GitHub: publishing is committing this document's sources and pushing
+        files = sorted(f for f in changed() if f.startswith(rel + "/") and "/build/" not in f
+                       and not any(fnmatch.fnmatch(f, h) for h in hold))
+        if not files:
+            return True, "nothing to publish: no changed sources"
+        _git(repo, "add", "--", *files)
+        chapters = sorted({Path(f).stem for f in files if f.endswith(".tex")})
+        msg = f"Update {doc.name}" + (f": {', '.join(chapters)}" if chapters else "")
+        c = _git(repo, "-c", "user.name=Ahmad Ammar", "-c", "user.email=ahmadammargeo@gmail.com", "commit", "-m", msg)
+        pu = _git(repo, "push")
+        remote = _git(repo, "remote", "get-url", "origin").stdout.strip()
+        m = re.search(r"github\.com[:/]([^/]+/[^/]+?)(?:\.git)?/?$", remote)
+        where = f"https://github.com/{m.group(1)}/actions" if m else "the repository's Actions page"
+        return pu.returncode == 0, (f"committed {len(files)} files\n{c.stdout[-300:]}{pu.stderr[-300:]}\n"
+                                    + (f"pushed: GitHub is building the site now (about 10 minutes); progress at {where}"
+                                       if pu.returncode == 0 else "push failed"))
     before = changed()
     cmd = (repo / ".stack-web").read_text(encoding="utf8").strip().format(name=doc.name, path=doc)
     args = cmd.split()
