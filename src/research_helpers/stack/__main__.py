@@ -1,7 +1,8 @@
 import sys
 
 from .editor import editor, preview
+from .studio import studio
 from . import check, deploy, layouts, pdf, refresh_skin, snapshot, web
 
 action, *args = sys.argv[1:] or ["layouts"]
-{"layouts": layouts, "pdf": pdf, "web": web, "check": check, "snapshot": snapshot, "deploy": deploy, "skin": refresh_skin, "editor": editor, "preview": preview}[action](*args)
+{"layouts": layouts, "pdf": pdf, "web": web, "check": check, "snapshot": snapshot, "deploy": deploy, "skin": refresh_skin, "editor": editor, "preview": preview, "studio": studio}[action](*args)

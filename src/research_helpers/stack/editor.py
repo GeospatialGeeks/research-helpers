@@ -63,12 +63,16 @@ def editor(repo="."):
         "latex-workshop.latex.outDir": "%DIR%/../build/preview",
         "latex-workshop.view.pdf.viewer": "tab",
         "latex-workshop.latex.search.rootFiles.exclude": ["**/build/**"],
+        "[latex]": {"editor.wordWrap": "on", "editor.wrappingIndent": "same"},
+        "[bibtex]": {"editor.wordWrap": "on"},
     }
     tasks = {"version": "2.0.0", "tasks": [
         {"label": "Preview this document (PDF)", "type": "process", "command": py, "args": run[1:] + ["${file}"],
          "group": {"kind": "build", "isDefault": True}, "problemMatcher": []},
         {"label": "Rebuild this document's web pages", "type": "process", "command": py, "args": run[1:] + ["${file}", "web"],
          "problemMatcher": []},
+        {"label": "Studio: all chapters with previews", "type": "process", "command": py,
+         "args": ["-m", "research_helpers.stack", "studio", "${file}"], "isBackground": True, "problemMatcher": []},
     ]}
     for name, new in (("settings.json", settings), ("tasks.json", tasks)):
         f = vs / name
