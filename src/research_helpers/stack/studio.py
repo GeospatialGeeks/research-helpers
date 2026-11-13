@@ -392,7 +392,9 @@ def publish(doc):
     if not files:
         return True, log + "nothing changed: no commit"
     _git(repo, "add", "--", *files)
-    c = _git(repo, "-c", "user.name=Ahmad Ammar", "-c", "user.email=ahmadammargeo@gmail.com", "commit", "-m", f"Update {doc.name}")
+    chapters = sorted({Path(f).stem for f in files if f.startswith(rel + "/") and f.endswith(".tex")})
+    msg = f"Update {doc.name}" + (f": {', '.join(chapters)}" if chapters else " (rebuild)")  # small, plain commit messages
+    c = _git(repo, "-c", "user.name=Ahmad Ammar", "-c", "user.email=ahmadammargeo@gmail.com", "commit", "-m", msg)
     pu = _git(repo, "push")
     log += f"committed {len(files)} files\n" + c.stdout[-300:] + pu.stderr[-300:]
     return pu.returncode == 0, log + ("pushed" if pu.returncode == 0 else "push failed")

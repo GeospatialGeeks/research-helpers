@@ -347,7 +347,35 @@ def web(project, build=True):
         )
     print("figures", T.build_figures(p)[:2], flush=True)
     T.build_pages(p)
-    return _site(d, docs, build)
+    out = _site(d, docs, build)
+    if build:
+        audit(out)
+    return out
+
+
+def audit(site, max_kb=800):
+    """Checks every build runs on its pages (after The Turing Way's CI): images without alternative text,
+    images larger than max_kb, pages without a top heading. Reports only; changes nothing."""
+    site = Path(site)
+    problems = []
+    for page in site.rglob("*.html"):
+        if "assets" in page.parts:
+            continue
+        html = page.read_text(encoding="utf8", errors="replace")
+        rel = page.relative_to(site).as_posix()
+        for tag in re.findall(r"<img[^>]*>", html):
+            alt = re.search(r'alt="([^"]*)"', tag)
+            if not alt or alt.group(1).strip().lower() in ("", "image", "figure", "img"):
+                problems.append(f"no alt text: {rel}: {tag[:90]}")
+        if "<h1" not in html and rel not in ("404.html", "search.html"):
+            problems.append(f"no top heading: {rel}")
+    for img in site.rglob("*"):
+        if img.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp") and img.stat().st_size > max_kb * 1024:
+            problems.append(f"large image ({img.stat().st_size // 1024} KB): {img.relative_to(site).as_posix()}")
+    print("audit:", len(problems), "to look at" if problems else "nothing to fix", flush=True)
+    for x in problems[:25]:
+        print("  ", x, flush=True)
+    return problems
 
 
 def _empty(folder):
@@ -589,7 +617,7 @@ def _edit_targets(d, w):
         remote = subprocess.run(["git", "remote", "get-url", "origin"], cwd=src, capture_output=True, text=True).stdout.strip()
         m = re.search(r"github\.com[:/]([^/]+/[^/.]+?)(?:\.git)?$", remote)
     return {"tex_files": files, "tex_first": f"{rel}/{chapters[0]}.tex", "local_root": top.as_posix(),
-            "web_editor": f"https://github.dev/{m.group(1)}/blob/main/" if m else ""}
+            "web_editor": f"https://github.dev/{m.group(1)}/blob/main/" if m else "", "repo": m.group(1) if m else ""}
 
 
 def write_skin(folder, docs):

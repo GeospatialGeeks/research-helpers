@@ -1,0 +1,20 @@
+# Everything a research_helpers.stack build needs, for a clean machine or CI.
+#   conda env create -f environment-stack.yml && conda activate stack
+#   python -m research_helpers.stack doctor
+# TeX (xelatex, latexmk, xdvipdfmx, biber) comes from TeX Live or MiKTeX, installed separately:
+#   https://www.tug.org/texlive/ (on GitHub Actions: the texlive or tinytex setup actions).
+name: stack
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pandoc>=3.1
+  - git
+  - matplotlib
+  - jupytext
+  - nbclient
+  - ipykernel
+  - pip
+  - pip:
+      - zensical
+      - -e .

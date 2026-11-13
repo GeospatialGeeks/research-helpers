@@ -89,3 +89,29 @@ def editor(repo="."):
             new = {**old, **new}
         f.write_text(json.dumps(new, indent=2) + "\n", encoding="utf8")
     print("VS Code editing set up in", vs)
+
+
+def doctor():
+    """Check that this machine has what a stack build needs, with versions, so a failing build can be traced
+    to a missing or different tool. The same list is in environment-stack.yml for a clean setup."""
+    import importlib.metadata as md
+    tools = {"pandoc": ["--version"], "xelatex": ["--version"], "latexmk": ["-v"], "xdvipdfmx": ["--version"],
+             "biber": ["--version"], "git": ["--version"], "zensical": ["--version"]}
+    bad = 0
+    for t, args in tools.items():
+        exe = shutil.which(t) or (str(Path(sys.prefix) / "Scripts" / f"{t}.exe") if (Path(sys.prefix) / "Scripts" / f"{t}.exe").exists() else None)
+        if not exe:
+            print(f"  missing  {t}")
+            bad += 1
+            continue
+        r = subprocess.run([exe, *args], capture_output=True, text=True, errors="replace")
+        first = next((l for l in (r.stdout + r.stderr).splitlines() if l.strip()), "")
+        print(f"  ok       {t:10} {first[:70]}")
+    for pkg in ("research_helpers", "jupytext", "nbclient", "matplotlib"):
+        try:
+            print(f"  ok       {pkg:10} {md.version(pkg.replace('_', '-'))}")
+        except md.PackageNotFoundError:
+            print(f"  missing  {pkg}")
+            bad += 1
+    print("ready" if not bad else f"{bad} missing: see environment-stack.yml")
+    return bad

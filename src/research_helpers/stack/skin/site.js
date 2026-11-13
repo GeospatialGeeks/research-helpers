@@ -68,3 +68,14 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("DOMContentLoaded", show);
   if (window.document$) document$.subscribe(show);
 })();
+
+// "Report a problem" opens a GitHub issue already filled in with this page's title and address.
+document.querySelectorAll("a[data-report]").forEach(function (a) {
+  a.addEventListener("click", function () {
+    var t = "Problem on: " + document.title, b = "Page: " + location.href.split("#")[0] + "
+
+What is wrong (a broken step, a link, a typo, something unclear):
+";
+    a.href = a.href.split("?")[0] + "?title=" + encodeURIComponent(t) + "&body=" + encodeURIComponent(b);
+  });
+});
