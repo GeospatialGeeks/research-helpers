@@ -615,7 +615,7 @@ def _edit_targets(d, w):
     m = re.match(r"https://github\.dev/([^/]+/[^/]+)/", w.get("edit_url", ""))
     if not m:  # no edit_url set: take the repository from its GitHub remote, so every project gets the links
         remote = subprocess.run(["git", "remote", "get-url", "origin"], cwd=src, capture_output=True, text=True).stdout.strip()
-        m = re.search(r"github\.com[:/]([^/]+/[^/.]+?)(?:\.git)?$", remote)
+        m = re.search(r"github\.com[:/]([^/]+/[^/]+?)(?:\.git)?/?$", remote)
     return {"tex_files": files, "tex_first": f"{rel}/{chapters[0]}.tex", "local_root": top.as_posix(),
             "web_editor": f"https://github.dev/{m.group(1)}/blob/main/" if m else "", "repo": m.group(1) if m else ""}
 
