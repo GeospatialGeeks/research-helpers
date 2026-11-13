@@ -430,6 +430,23 @@ def documents(extra=()):
     return found
 
 
+_REPOS = {}
+
+
+def local_repo(slug):
+    """This computer's clone of a GitHub repository ("owner/name"), found among the folders in ROOTS by its
+    remote; None if there is none. The published site only knows the repository, not where it lives here."""
+    if not _REPOS:
+        for root in ROOTS:
+            for d in root.iterdir() if root.exists() else []:
+                if (d / ".git").exists():
+                    r = subprocess.run(["git", "remote", "get-url", "origin"], cwd=d, capture_output=True, text=True).stdout.strip()
+                    m = re.search(r"github\.com[:/]([^/]+/[^/]+?)(?:\.git)?/?$", r)
+                    if m:
+                        _REPOS[m.group(1).lower()] = d
+    return _REPOS.get(slug.lower())
+
+
 def studio(target=None, port="8770"):
     """With a document (or a file in one): open it. Without: the hub of every document under ~/dev, which stays
     running; /open?file=<path to a .tex> (used by the site's Admin bar) opens that document at that chapter."""
@@ -463,8 +480,16 @@ def studio(target=None, port="8770"):
 
         def _route(self):
             u = urlparse(self.path)
-            if u.path == "/open":
-                f = Path(unquote(parse_qs(u.query).get("file", [""])[0]))
+            if u.path in ("/open", "/vscode"):
+                q = parse_qs(u.query)
+                f = Path(unquote(q.get("file", [""])[0]))
+                if q.get("repo"):  # links on the published site name the repository and a path inside it
+                    root = local_repo(unquote(q["repo"][0]))
+                    if root is None:
+                        return "404", None, u
+                    f = root / f
+                if u.path == "/vscode":
+                    return ("vscode", f, u) if f.exists() else ("404", None, u)
                 doc = find_document(f)
                 if doc is None:
                     return "404", None, u
@@ -484,6 +509,11 @@ def studio(target=None, port="8770"):
                 return self._send(index())
             if kind == "redirect":
                 return self._send("", code=302, extra=[("Location", arg)])
+            if kind == "vscode":
+                link = "vscode://file/" + arg.resolve().as_posix()
+                return self._send(f'<!doctype html><meta charset=utf-8><title>Opening in VS Code</title>'
+                                  f'<p style="font:16px system-ui;margin:40px">Opening <code>{html_escape(str(arg))}</code> in VS Code… '
+                                  f'<a href="{link}">open it</a> if nothing happens.</p><script>location.href={json.dumps(link)}</script>')
             if kind == "doc":
                 doc, rest = arg
                 if rest == "":
