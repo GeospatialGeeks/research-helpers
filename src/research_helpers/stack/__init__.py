@@ -285,12 +285,16 @@ def _own(d, out):
                 shutil.copy2(d["_src"] / (stem + suffix), out / (stem + suffix))
     uses_xe = d.get("engine") == "xelatex" or any("fontspec" in f.read_text(encoding="utf8", errors="replace") for f in [*d["_src"].glob("*.tex"), *d["_src"].glob("*.sty"), *d["_src"].glob("*.cls")])
     if not d.get("command"):
-        args = ["latexmk", "-xelatex" if uses_xe else "-pdf", "-interaction=nonstopmode", f"-outdir={out}", main]
-        subprocess.run(args, cwd=d["_src"], capture_output=True)
+        args = ["latexmk", "-xelatex" if uses_xe else "-pdf", "-interaction=nonstopmode", "-e", "$bibtex_fudge=0", f"-outdir={out}", main]
+        # BibTeX runs inside the output folder, so the source folder must come first on its search path; otherwise a
+        # same-named file in the TeX distribution (MiKTeX ships several references.bib) is read instead
+        here = os.pathsep.join([str(d["_src"]), *[str((d["_src"] / x).resolve()) for x in d.get("shared", [])], ""])
+        env = dict(os.environ, BIBINPUTS=here, BSTINPUTS=here)
+        subprocess.run(args, cwd=d["_src"], capture_output=True, env=env)
         log = out / (Path(main).stem + ".log")
         if log.exists() and "undefined references" in log.read_text(encoding="latin1", errors="replace"):
             # latexmk can stop one pass early when a label comes from a generated file read after its first use
-            subprocess.run(args[:1] + ["-g"] + args[1:], cwd=d["_src"], capture_output=True)
+            subprocess.run(args[:1] + ["-g"] + args[1:], cwd=d["_src"], capture_output=True, env=env)
     made = out / (Path(main).stem + ".pdf")
     xdv = out / (Path(main).stem + ".xdv")
     if xdv.exists():
@@ -301,8 +305,10 @@ def _own(d, out):
     if made.exists():
         shutil.copy2(made, final)
     log = out / (Path(main).stem + ".log")
-    errors = sorted(set(re.findall(r"^! .*", log.read_text(encoding="latin1", errors="replace"), re.M)))[:6] if log.exists() else ["no log"]
-    return dict(pdf=str(final) if made.exists() else None, errors=errors, undefined=[])
+    text = log.read_text(encoding="latin1", errors="replace") if log.exists() else ""
+    errors = sorted(set(re.findall(r"^! .*", text, re.M)))[:6] if log.exists() else ["no log"]
+    undefined = sorted(set(re.findall(r"(?:Citation|Reference) [`']([^']+)'[^\n]*undefined", text)))[:6]
+    return dict(pdf=str(final) if made.exists() else None, errors=errors, undefined=undefined)
 
 
 def _project_from_module(d, spec):
