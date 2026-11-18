@@ -79,3 +79,11 @@ def test_rasters():
     v = np.array([[1.0, 3.0, np.nan], [5.0, 9.0, 4.0]])
     z = rs.zonal(v, lab, min_valid=0.6)
     assert z["mean"][1] == 3 and z["median"][1] == 3 and np.isnan(z["mean"][2]) and z["valid_share"][2] == 0.5
+
+
+def test_code_fingerprint_ignores_documentation_only():
+    from research_helpers.inventory import code_fingerprint
+    a = "def f(x):\n    return x + 1\n"
+    b = '"""Module."""\ndef f(x):\n    """Add one."""\n    # a comment\n    return x + 1\n'
+    c = "def f(x):\n    return x + 2\n"
+    assert code_fingerprint(a) == code_fingerprint(b) != code_fingerprint(c)

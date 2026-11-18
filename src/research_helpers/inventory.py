@@ -1,6 +1,8 @@
 """Inventory of the code across many projects: every function, whether it is documented, and where the same job is done twice.
 
     python -m research_helpers.inventory ROOT [ROOT ...] --out inventory/
+    python -m research_helpers.inventory ROOT --save-fingerprints before.json     before a documentation pass
+    python -m research_helpers.inventory ROOT --compare before.json               after it: lists files whose code changed
 
 Writes three files to the output folder:
 
@@ -162,8 +164,23 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("roots", nargs="+", type=Path)
     ap.add_argument("--out", type=Path, default=Path("inventory"))
+    ap.add_argument("--save-fingerprints", type=Path, help="write code fingerprints of the first root to this JSON file")
+    ap.add_argument("--compare", type=Path, help="compare the first root with saved fingerprints; exit 1 if code changed")
     a = ap.parse_args(argv)
     roots = [r.resolve() for r in a.roots]
+    if a.save_fingerprints or a.compare:
+        import json
+        now = fingerprints(roots[0])
+        if a.save_fingerprints:
+            a.save_fingerprints.write_text(json.dumps(now, indent=0), encoding="utf-8")
+            print(f"{len(now)} files fingerprinted -> {a.save_fingerprints}")
+            return 0
+        before = json.loads(a.compare.read_text(encoding="utf-8"))
+        changed = sorted(k for k in before if k in now and now[k] != before[k])
+        print(f"{len(before)} files compared; code changed in {len(changed)}")
+        for c in changed:
+            print("  " + c)
+        return 1 if changed else 0
     rows = scan(roots)
     dups = duplicates(rows)
     a.out.mkdir(parents=True, exist_ok=True)
@@ -177,5 +194,33 @@ def main(argv=None):
     print((a.out / "summary.md").read_text(encoding="utf-8"))
 
 
+
+def code_fingerprint(source):
+    """Hash of a Python source's syntax tree with every docstring removed. Comments never reach the tree.
+
+    Two versions of a file with the same fingerprint run identically: only documentation differs. Used to prove that a
+    documentation pass changed no behaviour."""
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            body = node.body
+            if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], "value", None), ast.Constant) \
+                    and isinstance(body[0].value.value, str):
+                node.body = body[1:] or [ast.Pass()]
+    return hashlib.sha1(ast.dump(tree, include_attributes=False).encode()).hexdigest()
+
+
+def fingerprints(root):
+    """{relative path: code_fingerprint} for every Python file under root (SKIP folders left out)."""
+    root = Path(root)
+    out = {}
+    for _, p in files([root], {".py"}):
+        try:
+            out[str(p.relative_to(root))] = code_fingerprint(p.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            out[str(p.relative_to(root))] = "syntax-error"
+    return out
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
