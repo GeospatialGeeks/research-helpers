@@ -38,3 +38,44 @@ def test_indices():
     assert abs(indices.savi(0.5, 0.1) - 1.5 * 0.4 / 1.1) < 1e-12
     bands = {"B8": np.array([0.5]), "B4": np.array([0.1])}
     assert indices.compute("ndvi", bands)[0] == 0.4 / 0.6
+
+
+def test_climstats():
+    import pandas as pd
+    from research_helpers import climstats as cs
+    idx = pd.date_range("2000-01-01", periods=48, freq="MS")
+    s = pd.Series(np.tile(np.arange(12.0), 4) + 1, index=idx)               # same cycle every year
+    assert np.allclose(cs.anomalies(s), 0)
+    x = np.arange(30.0)
+    t = cs.trend(x, 2 * x + 1, per=10)
+    assert abs(t["slope"] - 20) < 1e-9
+    assert cs.sen_slope(x, 2 * x) == 2 and cs.sen_slope([0, 1, 2, 3], [0, 1, 100, 3]) == 1
+    mk = cs.mann_kendall(np.arange(10.0))
+    assert mk["S"] == 45 and mk["p"] < 0.001                                 # every pair increases: S = n(n-1)/2
+    est, lo, hi = cs.bootstrap_ci(np.arange(100.0))
+    assert est == 49.5 and lo < 49.5 < hi
+    rng = np.random.default_rng(1)
+    e = np.zeros(200)
+    for i in range(1, 200):
+        e[i] = 0.7 * e[i - 1] + rng.normal()                                 # AR(1): corrected SE must be larger
+    t = cs.trend(np.arange(200.0), e)
+    assert t["r1"] > 0.5 and t["se"] > 1.5 * t["se_naive"]
+
+
+def test_rasters():
+    from research_helpers import rasters as rs
+    x, y = np.meshgrid(np.arange(10.0), np.arange(10.0))
+    dem = 10 * x                                    # rises 10 m per 10 m cell to the east: 45 degrees, faces west
+    s, a = rs.slope_aspect(dem, 10)
+    assert abs(s[5, 5] - 45) < 1e-9 and abs(a[5, 5] - 270) < 1e-9
+    s, a = rs.slope_aspect(10 * y, 10)              # rises to the south: faces north
+    assert abs(a[5, 5] % 360) < 1e-9
+    assert rs.local_relief(dem, 3)[5, 5] == 20
+    assert np.allclose(rs.to_linear(rs.to_db(np.array([0.5, 2.0]))), [0.5, 2.0])
+    assert abs(rs.mean_db(np.array([[0.0], [10.0]]))[0] - 10 * np.log10(5.5)) < 1e-9
+    flat = np.random.default_rng(0).gamma(4.4, 1 / 4.4, (64, 64))
+    assert rs.lee_filter(flat).std() < flat.std() / 2
+    lab = np.array([[1, 1, 2], [1, 0, 2]])
+    v = np.array([[1.0, 3.0, np.nan], [5.0, 9.0, 4.0]])
+    z = rs.zonal(v, lab, min_valid=0.6)
+    assert z["mean"][1] == 3 and z["median"][1] == 3 and np.isnan(z["mean"][2]) and z["valid_share"][2] == 0.5

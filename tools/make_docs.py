@@ -13,7 +13,7 @@ TITLES = {
     "safeio": "Never overwrite", "records": "Research records", "tables": "Results tables",
     "spatial_cv": "Spatial cross-validation and area of applicability", "jobqueue": "Job queue",
     "litreview": "Literature review", "templates": "Paper templates and citation styles",
-    "meteo": "Meteorology equations", "indices": "Spectral indices", "inventory": "Code inventory",
+    "meteo": "Meteorology equations", "indices": "Spectral indices", "inventory": "Code inventory", "climstats": "Climate time-series statistics", "rasters": "Rasters, terrain, SAR and lidar",
 }
 
 
