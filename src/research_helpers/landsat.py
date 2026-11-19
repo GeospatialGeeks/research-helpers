@@ -32,7 +32,7 @@ def prepare(asset, region, start, end, harmonise=True, slope=None, intercept=Non
 
     def one(i):
         """One Landsat Collection 2 image as surface reflectance (x 0.0000275 - 0.2) with cloud, shadow and
-                dilated cloud masked, non-positive values masked, harmonised to OLI if asked.
+        dilated cloud masked, non-positive values masked, harmonised to OLI if asked.
         """
         clear = i.select("QA_PIXEL").bitwiseAnd(0b11010).eq(0)
         sr = i.select(bands, COMMON).multiply(0.0000275).add(-0.2).updateMask(clear)

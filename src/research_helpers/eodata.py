@@ -22,7 +22,7 @@ AWS = "https://earth-search.aws.element84.com/v1"
 @dataclass
 class Route:
     """One way to get a dataset outside Earth Engine: kind (stac, earthaccess, url, cds, none) and its
-        identifiers.
+    identifiers.
     """
     kind: str                 # stac, earthaccess, url, cds or none
     where: str                # STAC address, NASA short name, or URL pattern

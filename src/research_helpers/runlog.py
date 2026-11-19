@@ -113,7 +113,7 @@ def _files(paths, hash_limit_mb=50):
 
 def energy(core_hours, mem_gb_hours=0.0, pue=PUE, w_core=W_PER_CORE, w_gb=W_PER_GB):
     """Energy estimate (kWh) by the Green Algorithms method (Lannelongue et al. 2021): (core hours x W per core +
-        memory GB hours x W per GB) x PUE / 1000.
+    memory GB hours x W per GB) x PUE / 1000.
     """
     kwh = (core_hours * w_core + mem_gb_hours * w_gb) * pue / 1000
     return {"kwh_estimate": round(kwh, 4), "method": "Green Algorithms (Lannelongue et al. 2021)",

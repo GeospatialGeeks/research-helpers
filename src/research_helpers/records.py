@@ -33,7 +33,7 @@ def sha256(path, chunk=1 << 22):
 
 def data_register(root, hash_limit_mb=200, skip=("_archive", ".git", "__pycache__")):
     """One row per data folder: files, size, newest change, hash (up to hash_limit_mb) and source notes
-        from SOURCE.txt.
+    from SOURCE.txt.
     """
     root = pathlib.Path(root)
     rows = []

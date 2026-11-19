@@ -35,7 +35,7 @@ def countries(aff):
 
 def cagr(by_year, base=None, end=None):
     """Compound annual growth (%) of records from base to end (default: first year to the year before the last,
-        which is usually incomplete); returns (growth, base, end).
+    which is usually incomplete); returns (growth, base, end).
     """
     years = sorted(by_year)
     base = base or years[0]

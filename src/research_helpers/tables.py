@@ -40,7 +40,7 @@ def thousands(n):
 
 def latex_table(name, caption, header, rows, align, note=None, size=r"\small", scale=True, placement="htbp"):
     """A LaTeX table: caption, label, header, rows ('MID' for a rule), alignment, optional note, size and
-        scaling.
+    scaling.
     """
     lines = [rf"\begin{{table}}[{placement}]", r"\centering", size, rf"\caption{{{caption}}}\label{{tab:{name}}}"]
     if scale:

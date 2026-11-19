@@ -61,7 +61,7 @@ def repeated_block_cv(fit_predict, X, y, x, yc, block_sizes=(1000, 2000, 5000), 
 
 class AreaOfApplicability:
     """Area of applicability (Meyer and Pebesma 2021): flags predictions far from the training data in
-        predictor space.
+    predictor space.
     """
     def __init__(self, weights=None):
         """Optional predictor weights (for example importances)."""
@@ -74,7 +74,7 @@ class AreaOfApplicability:
 
     def fit(self, X, folds=None, sample=3000, seed=0):
         """Fit on training predictors: scaling, nearest-neighbour tree, mean pairwise distance and the
-                threshold (Q3 + 1.5 IQR of training dissimilarity, across folds if given).
+        threshold (Q3 + 1.5 IQR of training dissimilarity, across folds if given).
         """
         from scipy.spatial import cKDTree
         from scipy.spatial.distance import pdist
