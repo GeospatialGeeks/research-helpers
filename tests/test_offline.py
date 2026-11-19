@@ -12,6 +12,7 @@ from research_helpers.latex2docx import _number, _tables
 
 
 def test_keep_archives(tmp_path):
+    """Writing over a file archives the old copy."""
     p = tmp_path / "a.csv"
     p.write_text("1")
     keep(p).write_text("2")
@@ -20,6 +21,7 @@ def test_keep_archives(tmp_path):
 
 
 def test_tables():
+    """latex_table writes rules, numbers and the note."""
     t = latex_table("x", "Cap.", ["A", "B"], [["a", num(1.234, 1)], "MID", ["b", "--"]], "lr", note="n")
     assert r"\label{tab:x}" in t and "1.2" in t and r"\midrule" in t
     assert r"\label{tab:y}" in pending_table("y", "later")
@@ -27,6 +29,7 @@ def test_tables():
 
 
 def test_block_folds():
+    """Spatial blocks never share points across folds."""
     rng = np.random.default_rng(0)
     x, y = rng.uniform(0, 10000, 500), rng.uniform(0, 10000, 500)
     f = block_folds(x, y, 2000, k=5, seed=1)
@@ -38,6 +41,7 @@ def test_block_folds():
 
 
 def test_aoa():
+    """Points far from the training data fall outside the area of applicability."""
     rng = np.random.default_rng(0)
     X = rng.normal(size=(400, 3))
     aoa = AreaOfApplicability().fit(X)
@@ -46,6 +50,7 @@ def test_aoa():
 
 
 def test_screen_and_kappa():
+    """Screening rules and Cohen's kappa on a small case."""
     rec = pd.DataFrame({"title": ["Satellite mapping of building energy efficiency", "A review of heat pumps"],
                         "abstract": ["", ""], "year": [2020, 2021]})
     crit = {"pop": "building", "out": "energy efficiency", "geo": "satellite", "rev": r"\breview\b"}
@@ -57,6 +62,7 @@ def test_screen_and_kappa():
 
 
 def test_dedup_and_bibliometrics():
+    """Duplicates by DOI and title are removed; growth and counts are right."""
     a = pd.DataFrame({"rid": ["1", "2"], "db": ["Scopus", "Scopus"], "doi": ["10.1/A", None], "title": ["Same title", "Other"],
                       "abstract": ["x", "y"], "year": [2020, 2021], "source_title": ["J", "J"], "doc_type": ["Article"] * 2,
                       "cited_by": [3, 1], "affiliations": ["Uni, Belfast, UK", "Uni, Dublin, Ireland"], "author_keywords": ["EPC; GIS", "GIS"]})
@@ -68,6 +74,7 @@ def test_dedup_and_bibliometrics():
 
 
 def test_numbering():
+    """Chapters, sections and tables are numbered as in the PDF."""
     body = (r"\chapter{Intro}\label{ch:i}\section{A}\label{s:a}\begin{table}\caption{T}\label{tab:t}\end{table}"
             r"\appendix\chapter{Data}\label{app:d}")
     out, names = _number(body, chapters=True)
@@ -76,6 +83,7 @@ def test_numbering():
 
 
 def test_publisher_profile_numbering():
+    """Publisher profile numbering, including Roman numerals."""
     from research_helpers.latex2docx import Profile, _number, _roman
     assert [_roman(n) for n in (1, 4, 9, 14)] == ["I", "IV", "IX", "XIV"]
     p = Profile(reference_docx="x.docx", number_headings=False, caption_labels=False, section_name="Section {n}",
@@ -89,6 +97,7 @@ def test_publisher_profile_numbering():
 
 
 def test_profile_styles_and_columns():
+    """Publisher profile styles and column settings are applied."""
     from research_helpers.latex2docx import Profile, _apply_profile
     p = Profile(reference_docx="x.docx", columns=2, styles={"FirstParagraph": "BodyText", "Bibliography": "references"},
                 strip_reference_numbers=True)
@@ -105,6 +114,7 @@ def test_profile_styles_and_columns():
 
 
 def test_template_registry():
+    """Every starter's files are registered, and each entry has either download URLs or manual steps."""
     from research_helpers import templates
     for name, s in templates.STARTERS.items():
         assert s["entry"] in templates.REGISTRY and all(e in templates.REGISTRY for e, _ in s.get("files", []))

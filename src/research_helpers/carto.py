@@ -44,6 +44,7 @@ def use_style():
 
 
 def size(width="double", ratio=0.62):
+    """Figure size (inches) for a journal width ('single', 'double' or a number) and height ratio."""
     w = WIDTH.get(width, width)
     return w, w * ratio
 
@@ -80,6 +81,7 @@ def scale_bar(ax, location="lower left"):
 
 
 def panel_labels(axes, x=-0.02, y=1.03):
+    """Label axes (a), (b), ... at their top left."""
     for i, ax in enumerate(axes):
         ax.text(x, y, f"({chr(97 + i)})", transform=ax.transAxes, fontweight="bold", fontsize=9, va="bottom", ha="right")
 
@@ -126,6 +128,7 @@ def locator(fig, position, extent, box, projection=None):
 
 
 def credit(fig, text, y=0.005):
+    """Small data credit at the bottom right of a figure."""
     fig.text(0.995, y, text, ha="right", va="bottom", fontsize=5.5, color="#444444")
 
 
@@ -242,6 +245,7 @@ def _story_pptx(fig, stem, page, dpi):
     picture.unlink()
 
     def circle(cx, cy, label, size_pt):
+        """A numbered circle marker on a slide."""
         d = int(size_pt * 1.75 * 12700)
         s = slide.shapes.add_shape(MSO_SHAPE.OVAL, int(cx - d / 2), int(cy - d / 2), d, d)
         s.fill.solid()

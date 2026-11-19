@@ -18,6 +18,7 @@ TITLES = {
 
 
 def members(mod):
+    """Public members of a module (__all__, else names without underscore)."""
     names = getattr(mod, "__all__", None) or [n for n in dir(mod) if not n.startswith("_")]
     out = []
     for n in sorted(names):
@@ -28,6 +29,7 @@ def members(mod):
 
 
 def entries(mod):
+    """Markdown entries of a module's members with signatures and docstrings."""
     text = []
     for n, obj in members(mod):
         try:
@@ -42,6 +44,7 @@ def entries(mod):
 
 
 def module_doc(name):
+    """Markdown page of one module."""
     mod = importlib.import_module(f"research_helpers.{name}")
     head = f"# {TITLES.get(name, name)} (`research_helpers.{name}`)\n\n{inspect.getdoc(mod) or ''}\n\n## Functions and classes\n"
     if hasattr(mod, "__path__"):                                        # a sub-package: one section per module

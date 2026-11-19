@@ -23,17 +23,20 @@ DT_CANON = {"article": "Article", "review": "Review", "conference paper": "Confe
 
 
 def norm_title(t):
+    """Title for matching: ASCII, lower case, letters and digits only."""
     t = unicodedata.normalize("NFKD", str(t)).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]+", " ", t).strip()
 
 
 def norm_doi(d):
+    """DOI without prefix, lower case, or None."""
     if not isinstance(d, str) or not d.strip():
         return ""
     return re.sub(r"^(https?://(dx\.)?doi\.org/|doi:\s*)", "", d.strip().lower())
 
 
 def read_scopus(files):
+    """Records of Scopus CSV exports in the common columns."""
     frames = []
     for f in files:
         d = pd.read_csv(f, encoding="utf-8-sig", low_memory=False)
@@ -50,6 +53,7 @@ def read_scopus(files):
 
 
 def read_wos(files):
+    """Records of Web of Science exports in the common columns."""
     frames = []
     for f in files:
         d = pd.read_csv(f, sep="\t", quoting=3, dtype=str, encoding="utf-8-sig", index_col=False)
@@ -67,6 +71,8 @@ def read_wos(files):
 
 
 def deduplicate(allr):
+    """Records with duplicates removed (same record id, DOI, or title and year), preferring Scopus and
+    longer abstracts, with the databases each was found in; returns (records, removed duplicates with reasons)."""
     allr = allr.copy()
     allr["doi_n"] = allr["doi"].map(norm_doi)
     allr["title_n"] = allr["title"].map(norm_title)

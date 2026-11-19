@@ -23,7 +23,7 @@ Sources
 Departure of each value from its climatology (see climatology()). With standardise=True, divided by the
 standard deviation of the same calendar group in the base period (a z-score).
 
-**`bootstrap_ci(values, statistic=<function mean at 0x000001B317778EF0>, n=2000, level=0.95, block=1, seed=0)`**
+**`bootstrap_ci(values, statistic=<function mean at 0x0000017A536BA370>, n=2000, level=0.95, block=1, seed=0)`**
 
 Percentile bootstrap interval for statistic(values). block > 1 resamples moving blocks of that length, which
 keeps short-range dependence (use for time series). Returns (estimate, low, high).

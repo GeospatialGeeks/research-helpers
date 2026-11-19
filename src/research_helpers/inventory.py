@@ -146,6 +146,7 @@ def duplicates(rows):
 def summary(rows, dups):
     """Markdown counts per project and per topic."""
     def table(key):
+        """Markdown table of functions and docstring share grouped by a column."""
         n, d = Counter(), Counter()
         for r in rows:
             n[r[key]] += 1
@@ -161,6 +162,7 @@ def summary(rows, dups):
 
 
 def main(argv=None):
+    """Command line: write the inventory, or save or compare code fingerprints."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("roots", nargs="+", type=Path)
     ap.add_argument("--out", type=Path, default=Path("inventory"))

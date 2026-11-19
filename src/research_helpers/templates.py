@@ -99,12 +99,14 @@ STARTERS = {
 
 
 def library(path=None):
+    """The template library folder (RH_TEMPLATES, else ~/research-templates)."""
     p = pathlib.Path(path or os.environ.get("RH_TEMPLATES") or pathlib.Path.home() / "research-templates")
     p.mkdir(parents=True, exist_ok=True)
     return p
 
 
 def _sha(p):
+    """SHA-256 of a file."""
     return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
 
 
@@ -170,11 +172,13 @@ def fetch(names=None, lib=None, quiet=False):
 
 
 def _latest(lib, entry):
+    """Newest folder of a template in the library, or None."""
     cands = sorted([p for p in lib.glob(f"{entry}*") if p.is_dir() and (p.name == entry or p.name.startswith(entry + "_"))])
     return cands[-1] if cands else None
 
 
 def _find(root, patterns):
+    """First file under root matching any pattern."""
     for pat in patterns:
         hits = sorted(p for p in root.rglob(pat) if "__MACOSX" not in p.parts and not p.name.startswith("._"))
         if hits:
@@ -223,6 +227,7 @@ def new(starter, dest, lib=None):
 
 
 def status(lib=None):
+    """Each registered template: kind, whether it is in the library, folder and description."""
     lib = library(lib)
     rows = []
     for name, e in REGISTRY.items():

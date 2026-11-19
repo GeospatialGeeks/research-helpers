@@ -44,7 +44,7 @@ A function counts as documented when a // or /* comment ends on the line just ab
 
 **`main(argv=None)`**
 
-
+Command line: write the inventory, or save or compare code fingerprints.
 
 **`project_of(path, roots)`**
 

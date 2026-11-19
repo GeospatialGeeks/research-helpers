@@ -3,6 +3,7 @@ import argparse, json, pathlib, sys
 
 
 def main(argv=None):
+    """The rh command: dispatch to the helper named by the first argument."""
     ap = argparse.ArgumentParser(prog="rh", description="research-helpers: everyday helpers for reproducible research")
     sub = ap.add_subparsers(dest="cmd", required=True)
 

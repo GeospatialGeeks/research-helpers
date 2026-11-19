@@ -22,7 +22,7 @@ DOIs saved before are skipped.
 
 **`elsevier_pdf(doi)`**
 
-
+Article PDF from the Elsevier API (ELSEVIER_API_KEY, and ELSEVIER_INSTTOKEN if set); None otherwise.
 
 **`fetch(dois, dest, titles=None, limit=None)`**
 
@@ -34,7 +34,7 @@ True if the PDF's first pages contain the DOI or at least 80% of the title's lon
 
 **`norm_doi(d)`**
 
-
+DOI without prefix, lower case.
 
 **`openalex(dois)`**
 

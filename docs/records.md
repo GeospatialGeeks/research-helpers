@@ -23,7 +23,8 @@ what it reads, does and writes), as Markdown; a script documented in its docstri
 
 **`data_register(root, hash_limit_mb=200, skip=('_archive', '.git', '__pycache__'))`**
 
-
+One row per data folder: files, size, newest change, hash (up to hash_limit_mb) and source notes
+from SOURCE.txt.
 
 **`script_reference(scripts, root='.', commands=None)`**
 
@@ -31,6 +32,8 @@ scripts: list of paths relative to root (in run order); commands: {script: typic
 
 **`sha256(path, chunk=4194304)`**
 
-
+SHA-256 of a file, read in chunks.
 
 **`write_register(rows, out)`**
+
+Write the register rows as CSV.

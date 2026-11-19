@@ -23,11 +23,13 @@ MAX_BYTES = 60 * 1024 * 1024
 
 
 def norm_doi(d):
+    """DOI without prefix, lower case."""
     d = (d or "").strip().lower()
     return re.sub(r"^(https?://(dx\.)?doi\.org/|doi:\s*)", "", d)
 
 
 def _get(url, timeout=60, accept=None, data=None, extra=None):
+    """Response body of a URL with the library's headers; None on failure."""
     h = dict(UA, **(extra or {}))
     if accept:
         h["Accept"] = accept
@@ -122,6 +124,7 @@ def matches(path, doi, title):
 
 
 def elsevier_pdf(doi):
+    """Article PDF from the Elsevier API (ELSEVIER_API_KEY, and ELSEVIER_INSTTOKEN if set); None otherwise."""
     key = os.environ.get("ELSEVIER_API_KEY")
     if not key:
         return None

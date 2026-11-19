@@ -45,7 +45,7 @@ headings, captions and references are left for the template to number ("I. Intro
 
 **`PageSetup(left_mm: float = 25, right_mm: float = 25, top_mm: float = 25, bottom_mm: float = 25, font: str = 'Arial', size_pt: float = 12, line_spacing: float = 1.5, space_after_pt: float = 8, language: str = 'en-GB', heading_color: str = '000000', link_color: str = '000073', page_number: str = 'right', justify: bool = True, caption_size_pt: float = 11, table_size_pt: float = 0, booktabs: bool = True) -> None`**
 
-
+Word page size and margins (mm).
 
 **`Profile(reference_docx: str, styles: dict = <factory>, columns: int = 1, column_space_pt: float = 18, number_headings: bool = True, caption_labels: bool = True, section_name: str = 'Section {n}', figure_name: str = 'Figure {n}', table_name: str = 'Table {n}', strip_reference_numbers: bool = False, abstract_label: str = '', keywords_label: str = '', column_width_cm: float = 0, text_width_cm: float = 0) -> None`**
 

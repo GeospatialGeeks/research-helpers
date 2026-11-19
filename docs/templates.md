@@ -27,10 +27,12 @@ download registry entries into the library; returns {name: folder}
 
 **`library(path=None)`**
 
-
+The template library folder (RH_TEMPLATES, else ~/research-templates).
 
 **`new(starter, dest, lib=None)`**
 
 start a paper in dest (which must be empty or new) from a starter template; returns the folder
 
 **`status(lib=None)`**
+
+Each registered template: kind, whether it is in the library, folder and description.

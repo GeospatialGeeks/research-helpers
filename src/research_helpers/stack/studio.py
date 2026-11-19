@@ -214,6 +214,7 @@ addEventListener("beforeunload", e => { if (dirty.size) { e.preventDefault(); e.
 
 
 def _pandoc(text, src, dst, macros=""):
+    """Text converted between formats by pandoc."""
     r = subprocess.run([shutil.which("pandoc"), "-f", src, "-t", dst, "--wrap=none"] + (["--mathjax"] if dst == "html5" else []),
                        input=(macros + text).encode("utf8"), capture_output=True)
     return r.returncode, r.stdout.decode("utf8"), r.stderr.decode("utf8", "replace")
@@ -249,12 +250,14 @@ def atoms(block):
     found = []
 
     def sub(m):
+        """Replace a protected LaTeX fragment by a placeholder."""
         found.append(m.group(0))
         return f"{TOKEN}{len(found) - 1}Z"
     return ATOM.sub(sub, block), found
 
 
 def editable(block):
+    """True if a LaTeX block can be edited as rich text (no environments, display maths or comments)."""
     if re.search(r"\\begin|\\\[|(?<!\\)%|\\\\", block):
         return False
     m = HEADING.match(block)
@@ -270,6 +273,7 @@ class Doc:
     """One document: its chapters, macros, figure folders and the page that edits them."""
 
     def __init__(self, doc, key):
+        """A document opened in the studio."""
         d = load(doc)
         self.doc, self.key, self.src = doc, key, d["_src"]
         self.figdir = doc / d.get("figures", "figures")
@@ -280,6 +284,7 @@ class Doc:
                               for m in d.get("defines", []))
 
     def page(self):
+        """The editor page of the document."""
         chapters = [{"name": c, "file": str(f.relative_to(self.doc.parent)).replace("\\", "/"),
                      "text": f.read_text(encoding="utf8"), "mtime": f.stat().st_mtime} for c, f in self.files.items()]
         return (PAGE.replace("%TITLE%", self.title).replace("%CM%", CM).replace("%DOCKEY%", json.dumps(self.key))
@@ -318,6 +323,7 @@ class Doc:
         return out
 
     def to_latex(self, html, source):
+        """Edited HTML converted back to LaTeX for the source block."""
         m = HEADING.match(source)
         if m:  # keep the heading command; only its text changes
             head = re.search(r"<h\d[^>]*>(.*?)</h\d>", html, re.S)
@@ -353,6 +359,7 @@ class Doc:
         return f.name
 
     def figure(self, name):
+        """Path of a figure file."""
         for folder in self.figs:
             for f in [folder / name, *folder.glob(name + ".*")]:
                 if f.is_file() and f.suffix.lower() in (".png", ".jpg", ".jpeg", ".svg", ".gif"):
@@ -360,6 +367,7 @@ class Doc:
 
 
 def _git(repo, *args):
+    """Run git in a repository."""
     return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, encoding="utf8", errors="replace")
 
 
@@ -376,6 +384,7 @@ def publish(doc):
         return False, f"not published: {rel} is held back in .stack-hold"
 
     def changed():
+        """Files changed in the repository."""
         return {l[3:].strip('"') for l in _git(repo, "status", "--porcelain", "-uall").stdout.splitlines()}
     if (repo / ".stack-ci").exists():
         # the repository builds itself on GitHub: publishing is committing this document's sources and pushing
@@ -418,6 +427,7 @@ def publish(doc):
 
 
 def documents(extra=()):
+    """Document projects found in the workspace and extra folders."""
     found = {}
     for root in ROOTS:
         for t in root.rglob("document.toml") if root.exists() else []:
@@ -456,19 +466,24 @@ def studio(target=None, port="8770"):
     docs = documents([one])
 
     def key_of(doc):
+        """Key of a document path."""
         return next((k for k, v in docs.items() if doc and v.resolve() == Path(doc).resolve()), None)
 
     def index():
+        """Index page of documents."""
         rows = "".join(f'<li><a href="/d/{k}/">{k.replace("~", " / ")}</a></li>' for k in sorted(docs))
         return ("<!doctype html><meta charset=utf-8><title>Studio</title><style>body{font:16px/1.6 system-ui;margin:40px auto;max-width:760px;"
                 "padding:0 16px;background:#fbfaf7;color:#1d1d1f}@media(prefers-color-scheme:dark){body{background:#18181a;color:#e8e6e1}a{color:#5cc3c3}}"
                 f"</style><h1>Studio</h1><p>{len(docs)} documents with a document.toml.</p><ul>{rows}</ul>")
 
     class H(BaseHTTPRequestHandler):
+        """Request handler of the studio server."""
         def log_message(self, *a):
+            """Do not log requests."""
             pass
 
         def _send(self, body, kind="text/html; charset=utf-8", code=200, extra=()):
+            """Send a response."""
             b = body if isinstance(body, bytes) else body.encode("utf8")
             self.send_response(code)
             self.send_header("Content-Type", kind)
@@ -479,6 +494,7 @@ def studio(target=None, port="8770"):
             self.wfile.write(b)
 
         def _route(self):
+            """Kind and argument of the requested path."""
             u = urlparse(self.path)
             if u.path in ("/open", "/vscode"):
                 q = parse_qs(u.query)
@@ -504,6 +520,7 @@ def studio(target=None, port="8770"):
             return ("index" if u.path == "/" else "404"), None, u
 
         def do_GET(self):
+            """Serve pages, figures and data."""
             kind, arg, u = self._route()
             if kind == "index":
                 return self._send(index())
@@ -525,6 +542,7 @@ def studio(target=None, port="8770"):
             self._send("not found", "text/plain", 404)
 
         def do_POST(self):
+            """Save edits and run actions."""
             kind, arg, u = self._route()
             if kind != "doc":
                 return self._send("not found", "text/plain", 404)

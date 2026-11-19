@@ -49,11 +49,11 @@ author-year-word key, e.g. gorelick2017google
 
 **`push_queue(queue_file)`**
 
-
+Send every queued DOI to Zotero by collection; keeps the ones that fail in the queue.
 
 **`queue_for_zotero(records, collection, queue_file)`**
 
-
+Append DOIs to a queue file (date, doi, collection) to add to Zotero later.
 
 **`search_title(title, rows=3)`**
 
@@ -65,7 +65,7 @@ True if the record's title contains most of the expected words (case and punctua
 
 **`title_of(m)`**
 
-
+Title of a Crossref record.
 
 **`to_zotero(records, collection=None)`**
 
@@ -79,10 +79,12 @@ name, or True for the selected collection). Returns (written keys, problems).
 
 **`year_of(m)`**
 
-
+Publication year of a Crossref record, or None.
 
 **`zotero_dois()`**
 
 DOIs already in the Zotero library (from a copy of zotero.sqlite, which Zotero keeps locked)
 
 **`zotero_item(m)`**
+
+A Crossref record as a Zotero item (type, title, creators, date, DOI and more).

@@ -21,6 +21,9 @@ AWS = "https://earth-search.aws.element84.com/v1"
 
 @dataclass
 class Route:
+    """One way to get a dataset outside Earth Engine: kind (stac, earthaccess, url, cds, none) and its
+        identifiers.
+    """
     kind: str                 # stac, earthaccess, url, cds or none
     where: str                # STAC address, NASA short name, or URL pattern
     collection: str = ""
@@ -75,12 +78,14 @@ CATALOGUE = {
 
 
 def routes(gee_id):
+    """Other routes to an Earth Engine dataset; KeyError if none is listed yet."""
     if gee_id not in CATALOGUE:
         raise KeyError(f"{gee_id} has no second route listed yet; add it to CATALOGUE")
     return CATALOGUE[gee_id]
 
 
 def _client(route):
+    """A STAC client for a route's catalogue."""
     import pystac_client
     return pystac_client.Client.open(route.where)
 

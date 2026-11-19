@@ -13,14 +13,17 @@ ESC = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#"
 
 
 def escape(s):
+    """Text escaped for LaTeX."""
     return "".join(ESC.get(c, c) for c in str(s))
 
 
 def _ascii(text):
+    """Text in ASCII (other characters as ?)."""
     return text.encode("ascii", "replace").decode().replace("?", "?")
 
 
 def _write(lines, first, label, out):
+    """Write lines as a LaTeX listing starting at line first, with a label."""
     body = _ascii("\n".join(lines))
     head = rf"\snippetcaption{{{escape(label)}, lines {first}--{first + len(lines) - 1}}}"
     Path(out).parent.mkdir(parents=True, exist_ok=True)
@@ -29,6 +32,7 @@ def _write(lines, first, label, out):
 
 
 def function_listing(path, name, out, label=None):
+    """Write the source of one function in a file as a LaTeX listing."""
     path = Path(path)
     source = path.read_text(encoding="utf8")
     node = next((n for n in ast.walk(ast.parse(source)) if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name == name), None)
@@ -39,6 +43,7 @@ def function_listing(path, name, out, label=None):
 
 
 def around_listing(path, pattern, out, before=2, after=8, label=None):
+    """Write the lines around a pattern in a file as a LaTeX listing."""
     path = Path(path)
     lines = path.read_text(encoding="utf8", errors="replace").splitlines()
     i = next((k for k, l in enumerate(lines) if re.search(pattern, l)), None)
@@ -49,6 +54,7 @@ def around_listing(path, pattern, out, before=2, after=8, label=None):
 
 
 def check_literal(path, literal):
+    """Error if a quoted text no longer appears in the source file."""
     if literal not in Path(path).read_text(encoding="utf8", errors="replace"):
         raise ValueError(f"{literal} is no longer in {path}")
 

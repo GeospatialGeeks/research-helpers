@@ -5,17 +5,20 @@ from research_helpers import indices, meteo
 
 
 def test_saturation_vapour_pressure():
+    """Saturation vapour pressure: 6.112 hPa at 0 deg C (Bolton 1980)."""
     assert abs(meteo.saturation_vapour_pressure(0) - 6.112) < 1e-9          # Bolton's constant at 0 deg C
     assert abs(meteo.saturation_vapour_pressure(20) - 23.37) < 0.01         # tables: 23.39
 
 
 def test_dew_point_round_trip():
+    """Dew point of saturated air gives back its temperature."""
     w = meteo.saturation_mixing_ratio(15, 1000)
     assert abs(meteo.dew_point(w, 1000) - 15) < 1e-9                        # saturated air: dew point = temperature
     assert abs(meteo.dew_point_from_rh(25, 60) - 16.69) < 0.02
 
 
 def test_thickness_and_wind():
+    """Hypsometric thickness, Coriolis parameter, geostrophic wind and wind components against hand values."""
     assert abs(meteo.thickness(273.15, 1000, 500) - 287 * 273.15 / 9.81 * math.log(2)) < 1e-6
     assert abs(meteo.coriolis_parameter(30) - 7.292e-5) < 1e-12              # sin 30 = 1/2
     assert abs(meteo.geostrophic_wind(60, 500e3, 30) - 9.81 / 7.292e-5 * 60 / 500e3) < 1e-9
@@ -26,12 +29,14 @@ def test_thickness_and_wind():
 
 
 def test_codes_and_units():
+    """Station pressure codes and unit conversions."""
     assert meteo.decode_pressure(132) == 1013.2 and meteo.decode_pressure(978) == 997.8
     assert abs(meteo.knots_to_ms(1) - 1852 / 3600) < 1e-6
     assert meteo.fahrenheit_to_celsius(212) == 100
 
 
 def test_indices():
+    """Spectral indices against hand values."""
     assert indices.ndvi(0.5, 0.1) == 0.4 / 0.6
     assert np.isnan(indices.ndvi(0.0, 0.0))
     assert abs(indices.evi(0.5, 0.1, 0.05) - 2.5 * 0.4 / (0.5 + 0.6 - 0.375 + 1)) < 1e-12
@@ -41,6 +46,7 @@ def test_indices():
 
 
 def test_climstats():
+    """Climate statistics (anomalies, trends) on series with known answers."""
     import pandas as pd
     from research_helpers import climstats as cs
     idx = pd.date_range("2000-01-01", periods=48, freq="MS")
@@ -63,6 +69,7 @@ def test_climstats():
 
 
 def test_rasters():
+    """Slope and aspect of a tilted plane, and other raster helpers, against hand values."""
     from research_helpers import rasters as rs
     x, y = np.meshgrid(np.arange(10.0), np.arange(10.0))
     dem = 10 * x                                    # rises 10 m per 10 m cell to the east: 45 degrees, faces west
@@ -82,6 +89,7 @@ def test_rasters():
 
 
 def test_code_fingerprint_ignores_documentation_only():
+    """Fingerprints ignore docstrings and comments but change with code."""
     from research_helpers.inventory import code_fingerprint
     a = "def f(x):\n    return x + 1\n"
     b = '"""Module."""\ndef f(x):\n    """Add one."""\n    # a comment\n    return x + 1\n'

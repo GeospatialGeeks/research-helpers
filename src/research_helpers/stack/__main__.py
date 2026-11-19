@@ -1,3 +1,6 @@
+"""python -m research_helpers.stack ACTION [ARGS]: run a document action (layouts, pdf, web, check, snapshot,
+deploy, skin, editor, preview, doctor, studio).
+"""
 import sys
 
 from .editor import doctor, editor, preview

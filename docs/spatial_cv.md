@@ -27,7 +27,8 @@ where the model has seen similar conditions.
 
 **`AreaOfApplicability(weights=None)`**
 
-
+Area of applicability (Meyer and Pebesma 2021): flags predictions far from the training data in
+predictor space.
 
 **`block_folds(x, y, block_size, k=5, seed=0)`**
 

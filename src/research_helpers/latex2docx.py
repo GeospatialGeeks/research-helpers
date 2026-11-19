@@ -46,6 +46,7 @@ __all__ = ["convert", "PageSetup", "TitlePage", "Profile", "ieee_profile"]
 
 @dataclasses.dataclass
 class PageSetup:
+    """Word page size and margins (mm)."""
     left_mm: float = 25
     right_mm: float = 25
     top_mm: float = 25
@@ -119,6 +120,7 @@ def ieee_profile(reference_docx=None):
 
 
 def pandoc_exe():
+    """Path of pandoc (RH_PANDOC or on PATH)."""
     p = os.environ.get("RH_PANDOC") or shutil.which("pandoc")
     if not p:
         raise SystemExit("pandoc not found: install it (https://pandoc.org/installing.html) or set RH_PANDOC")
@@ -126,16 +128,20 @@ def pandoc_exe():
 
 
 def _bm(key):
+    """Word bookmark name of a label."""
     s = re.sub(r"[^A-Za-z0-9]", "_", key.strip())
     return ("x" + s if not s[:1].isalpha() else s)[:40]
 
 
 def _strip_comments(t):
+    """LaTeX text without comments (escaped % kept)."""
     return re.sub(r"(?<!\\)%.*", "", t)
 
 
 def _inline(text, base, input_macros=("input", "include", "tabinput", "subfile")):
+    """LaTeX text with input, include, tabinput and subfile commands replaced by the files they name."""
     def read(name):
+        """Text of an included file (with or without .tex)."""
         for c in (base / name, base / (name + ".tex")):
             if c.is_file():
                 return _strip_comments(c.read_text(encoding="utf-8"))
@@ -176,7 +182,9 @@ def _conditionals(body, defs):
 
 
 def _tables(body):
+    """Long tables and tabularx rewritten as tables pandoc converts."""
     def lt_fix(m):
+        """A longtable rewritten as a table with caption and label."""
         spec, b = m.group(1), m.group(2)
         cap = re.search(r"\\caption\{(.*?)\}\\label\{([^}]*)\}", b, re.S)
         head = b.split(r"\endfirsthead", 1)[0]
@@ -190,6 +198,7 @@ def _tables(body):
                   lambda m: m.group(2) + " &" * (int(m.group(1)) - 1), body)
 
     def to_tabular(m):
+        """A tabularx or longtable rewritten as a plain tabular."""
         spec = re.sub(r"@\{(?:[^{}]|\{[^{}]*\})*\}", "", m.group(1))
         spec = re.sub(r"[pmPb]\{[^}]*\}", "l", spec)
         spec = re.sub(r">\{[^}]*\}|<\{[^}]*\}", "", spec)
@@ -200,6 +209,7 @@ def _tables(body):
 
 
 def _roman(n):
+    """Lower-case Roman numeral of n."""
     out = ""
     for v, s in ((1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"),
                  (9, "IX"), (5, "V"), (4, "IV"), (1, "I")):
@@ -319,12 +329,14 @@ def _style(s, style_id, fn):
 
 
 def _set_color(xml, color):
+    """Word run XML with its colour set."""
     xml = re.sub(r"<w:color [^>]*/>", "", xml)
     return re.sub(r"<w:rPr>", f'<w:rPr><w:color w:val="{color}" />', xml, count=1) if "<w:rPr>" in xml \
         else xml.replace("</w:style>", f'<w:rPr><w:color w:val="{color}" /></w:rPr></w:style>')
 
 
 def _page_break_before(xml):
+    """Word paragraph XML with a page break before it."""
     if "<w:pageBreakBefore" in xml:
         return xml
     if "<w:pPr>" in xml:
@@ -341,6 +353,7 @@ def _set_ppr(xml, ppr):
 
 
 def _set_rpr(xml, rpr):
+    """Word XML with its run properties replaced."""
     xml = re.sub(r"<w:rPr\s*/>|<w:rPr>.*?</w:rPr>", "", xml, flags=re.S)
     return xml.replace("</w:style>", rpr + "</w:style>")
 
@@ -475,10 +488,12 @@ _BR = " RHMARKBR "                                                     # line br
 
 
 def _paragraph_with(text):
+    """Regular expression of a Word paragraph containing text."""
     return r"<w:p(?:\s[^>]*)?>(?:(?!<w:p[\s>]).)*?" + text + r"(?:(?!<w:p[\s>]).)*?</w:p>"
 
 
 def _paragraphs(xml):
+    """The paragraphs of Word XML."""
     return re.findall(r"<w:p(?:\s[^>]*)?>.*?</w:p>|<w:p\s*/>", xml, flags=re.S)
 
 
@@ -626,6 +641,7 @@ def _front_block(pre, body, profile):
     """title block of a journal or conference paper as styled paragraphs: authors, affiliations, abstract and keywords
     (IEEEtran \\IEEEauthorblockN / \\IEEEauthorblockA, abstract, IEEEkeywords)"""
     def take(env):
+        """Remove a front-matter environment from the body and return its content."""
         nonlocal body
         m = re.search(r"\\begin\{%s\}(.*?)\\end\{%s\}" % (env, env), body, re.S)
         if not m:
@@ -663,12 +679,14 @@ def _front_block(pre, body, profile):
 def _apply_profile(s, profile):
     """paragraph styles of the publisher's template, its numbering left to it, and the column layout"""
     def restyle(p, sid):
+        """A paragraph with its style set to sid."""
         p = re.sub(r'<w:pStyle w:val="[^"]*"\s*/>', "", p)
         if re.search(r"<w:pPr>", p):
             return p.replace("<w:pPr>", f'<w:pPr><w:pStyle w:val="{sid}"/>', 1)
         return re.sub(r"^(<w:p(?:\s[^>]*)?>)", lambda m: m.group(1) + f'<w:pPr><w:pStyle w:val="{sid}"/></w:pPr>', p)
 
     def para(p):
+        """A paragraph restyled by the publisher profile."""
         m = _STYLE.search(p)
         if m:
             p = restyle(_STYLE.sub("", p, count=1), m.group(1))
@@ -758,6 +776,7 @@ def convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width="1
     png_dir = out.parent / f"_{out.stem}_png"
 
     def graphic(m):                                                     # the PDF's width, relative widths on the text block
+        """An includegraphics command with its width taken from the PDF layout."""
         opts = m.group(1) or ""
         w = re.search(r"width\s*=\s*([\d.]*)\s*\\(linewidth|textwidth|columnwidth)", opts)
         u = re.search(r"width\s*=\s*([\d.]+\s*(?:cm|mm|in|pt))", opts)
@@ -776,6 +795,7 @@ def convert(main_tex, out_docx, csl=None, numbers=(), page=None, figure_width="1
     body, names = _number(body, chapters, profile)
 
     def resolve(m):
+        """A reference command replaced by the numbers of its targets."""
         keys = [k.strip() for k in m.group(2).split(",")]
         parts = [r"\hyperref[%s]{%s}" % (k, names.get(k, k)) for k in keys]
         return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]

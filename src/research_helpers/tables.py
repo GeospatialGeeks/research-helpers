@@ -19,6 +19,7 @@ __all__ = ["latex_table", "pending_table", "num", "tex", "thousands"]
 
 
 def tex(s):
+    """Text escaped for LaTeX (&, %, _, #)."""
     return str(s).replace("&", r"\&").replace("%", r"\%").replace("_", r"\_").replace("#", r"\#")
 
 
@@ -38,6 +39,9 @@ def thousands(n):
 
 
 def latex_table(name, caption, header, rows, align, note=None, size=r"\small", scale=True, placement="htbp"):
+    """A LaTeX table: caption, label, header, rows ('MID' for a rule), alignment, optional note, size and
+        scaling.
+    """
     lines = [rf"\begin{{table}}[{placement}]", r"\centering", size, rf"\caption{{{caption}}}\label{{tab:{name}}}"]
     if scale:
         lines.append(r"\begin{adjustbox}{max width=\linewidth}")
@@ -54,6 +58,7 @@ def latex_table(name, caption, header, rows, align, note=None, size=r"\small", s
 
 
 def pending_table(name, what):
+    """A placeholder table saying what is not available yet."""
     return (f"% table {name}: {what} not available yet\n\\begin{{table}}[htbp]\\centering\\small\n"
             f"\\caption{{Results pending: {tex(what)}.}}\\label{{tab:{name}}}\n"
             f"\\fbox{{\\parbox{{0.9\\linewidth}}{{\\centering The table is generated when the results are available.}}}}\n\\end{{table}}\n")

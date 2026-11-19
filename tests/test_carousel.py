@@ -8,6 +8,7 @@ PNG = bytes.fromhex("89504e470d0a1a0a0000000d49484452000000010000000108060000001
 
 
 def test_deck_has_notes(tmp_path):
+    """The slide deck carries the speaker notes."""
     images = []
     for i in range(2):
         p = tmp_path / f"s{i}.png"
@@ -19,6 +20,7 @@ def test_deck_has_notes(tmp_path):
 
 
 def test_mismatch_is_refused(tmp_path):
+    """Images and notes of different counts are refused."""
     p = tmp_path / "s.png"
     p.write_bytes(PNG)
     with pytest.raises(ValueError):

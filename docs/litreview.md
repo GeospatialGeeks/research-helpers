@@ -34,15 +34,16 @@ Waltman 2010) or bibliometrix (Aria and Cuccurullo 2017).
 
 **`cagr(by_year, base=None, end=None)`**
 
-
+Compound annual growth (%) of records from base to end (default: first year to the year before the last,
+which is usually incomplete); returns (growth, base, end).
 
 **`countries(aff)`**
 
-
+Countries named in an affiliation string.
 
 **`summary(rec, top=10, base_year=None)`**
 
-
+Records per year, growth, top countries, keywords and sources.
 
 
 ### `research_helpers.litreview.ingest`
@@ -63,7 +64,8 @@ Scopus export: "CSV" with all citation, bibliographical, abstract and keyword fi
 
 **`deduplicate(allr)`**
 
-
+Records with duplicates removed (same record id, DOI, or title and year), preferring Scopus and
+longer abstracts, with the databases each was found in; returns (records, removed duplicates with reasons).
 
 **`load(scopus=(), wos=())`**
 
@@ -71,11 +73,11 @@ read the exports and remove duplicates: (records, duplicates)
 
 **`norm_doi(d)`**
 
-
+DOI without prefix, lower case, or None.
 
 **`norm_title(t)`**
 
-
+Title for matching: ASCII, lower case, letters and digits only.
 
 **`query_blocks(query_text, max_blocks=None)`**
 
@@ -84,11 +86,11 @@ concept blocks of a Scopus TITLE-ABS-KEY(...) AND TITLE-ABS-KEY(...) query as co
 
 **`read_scopus(files)`**
 
-
+Records of Scopus CSV exports in the common columns.
 
 **`read_wos(files)`**
 
-
+Records of Web of Science exports in the common columns.
 
 
 ### `research_helpers.litreview.screen`
@@ -110,22 +112,24 @@ PRISMA: prisma_counts(...) returns the numbers of the PRISMA 2020 flow diagram (
 
 **`all_of(names)`**
 
-
+Rule: every named criterion matched.
 
 **`any_of(names)`**
 
-
+Rule: at least one named criterion matched.
 
 **`apply(rec, criteria, rule, exclude_if=(), flag_if=(), cols=('title', 'abstract', 'author_keywords', 'index_keywords'))`**
 
-
+Screen records by regular-expression criteria: matched criteria, include, decision and flags per record.
 
 **`cohen_kappa(a, b)`**
 
-
+Cohen's kappa of two screeners' decisions.
 
 **`prisma_counts(identified_db, duplicates, screened, excluded_screening, sought, not_retrieved, assessed, excluded_fulltext_reasons, included, identified_other=0)`**
 
 numbers of the PRISMA 2020 flow diagram, checked for consistency
 
 **`text_of(r, cols=('title', 'abstract', 'author_keywords', 'index_keywords'))`**
+
+Title, abstract and keywords of a record as one string.

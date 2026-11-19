@@ -19,7 +19,8 @@ its label, so \ref and \cref resolve while results are still being produced.
 
 **`latex_table(name, caption, header, rows, align, note=None, size='\\small', scale=True, placement='htbp')`**
 
-
+A LaTeX table: caption, label, header, rows ('MID' for a rule), alignment, optional note, size and
+scaling.
 
 **`num(v, d=2, missing='--')`**
 
@@ -27,11 +28,11 @@ format a number with d decimals; None / NaN -> missing
 
 **`pending_table(name, what)`**
 
-
+A placeholder table saying what is not available yet.
 
 **`tex(s)`**
 
-
+Text escaped for LaTeX (&, %, _, #).
 
 **`thousands(n)`**
 

@@ -21,6 +21,7 @@ CNORM = {"England": "United Kingdom", "Scotland": "United Kingdom", "Wales": "Un
 
 
 def countries(aff):
+    """Countries named in an affiliation string."""
     if not isinstance(aff, str):
         return []
     out = []
@@ -33,6 +34,9 @@ def countries(aff):
 
 
 def cagr(by_year, base=None, end=None):
+    """Compound annual growth (%) of records from base to end (default: first year to the year before the last,
+        which is usually incomplete); returns (growth, base, end).
+    """
     years = sorted(by_year)
     base = base or years[0]
     if end is None:
@@ -42,6 +46,7 @@ def cagr(by_year, base=None, end=None):
 
 
 def summary(rec, top=10, base_year=None):
+    """Records per year, growth, top countries, keywords and sources."""
     df = rec.copy()
     df["year"] = pd.to_numeric(df["year"], errors="coerce")
     df = df.dropna(subset=["year"]); df["year"] = df["year"].astype(int)

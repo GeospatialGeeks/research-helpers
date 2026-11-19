@@ -40,6 +40,7 @@ PACKAGES = ("numpy", "pandas", "geopandas", "xarray", "rasterio", "lightgbm", "s
 
 
 def _now():
+    """Local time with zone, to the second."""
     return datetime.datetime.now().astimezone().isoformat(timespec="seconds")
 
 
@@ -60,6 +61,7 @@ def where():
 
 
 def machine():
+    """Host, operating system, processor, cores and memory."""
     m = {"host": socket.gethostname(), "os": f"{platform.system()} {platform.release()}", "processor": platform.processor() or platform.machine(),
          "cores_logical": os.cpu_count(), "python": sys.version.split()[0]}
     try:
@@ -75,6 +77,7 @@ def machine():
 
 
 def _versions():
+    """Versions of Python and the main packages."""
     out = {}
     for p in PACKAGES:
         mod = sys.modules.get(p)
@@ -84,6 +87,7 @@ def _versions():
 
 
 def _git(cwd="."):
+    """Commit and dirty state of a repository."""
     try:
         c = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=cwd, capture_output=True, text=True, timeout=10)
         if c.returncode:
@@ -95,6 +99,7 @@ def _git(cwd="."):
 
 
 def _files(paths, hash_limit_mb=50):
+    """Path, size, date and hash (up to hash_limit_mb) of files."""
     rows = []
     for p in map(Path, paths or []):
         files = [p] if p.is_file() else [x for x in p.rglob("*") if x.is_file()] if p.is_dir() else []
@@ -107,13 +112,18 @@ def _files(paths, hash_limit_mb=50):
 
 
 def energy(core_hours, mem_gb_hours=0.0, pue=PUE, w_core=W_PER_CORE, w_gb=W_PER_GB):
+    """Energy estimate (kWh) by the Green Algorithms method (Lannelongue et al. 2021): (core hours x W per core +
+        memory GB hours x W per GB) x PUE / 1000.
+    """
     kwh = (core_hours * w_core + mem_gb_hours * w_gb) * pue / 1000
     return {"kwh_estimate": round(kwh, 4), "method": "Green Algorithms (Lannelongue et al. 2021)",
             "w_per_core": w_core, "w_per_gb": w_gb, "pue": pue}
 
 
 class Run:
+    """Record of one computation: question, inputs, outputs, services, machine, timings, CPU and energy."""
     def __init__(self, name, log, question="", inputs=(), outputs=(), services=(), project=""):
+        """Start recording a run and sampling its child processes."""
         self.log = Path(log)
         self.rec = {"name": name, "project": project, "question": question, "start": _now(), "where": where(), "machine": machine(),
                     "command": " ".join(sys.argv), "cwd": os.getcwd(), "git": _git(), "services": list(services),
@@ -141,12 +151,15 @@ class Run:
             self._proc = None
 
     def note(self, text):
+        """Add a note to the record."""
         self.rec["notes"].append(str(text))
 
     def metric(self, key, value):
+        """Record a result value."""
         self.rec["metrics"][key] = value
 
     def finish(self, status="ok", error=""):
+        """Stop: wall and CPU time (own and children), core hours, energy and status, appended to the log."""
         self._stop = True
         wall = time.perf_counter() - self._t0
         c1 = os.times()
@@ -170,6 +183,7 @@ class Run:
 
 @contextlib.contextmanager
 def run(name, log="records/compute", **kw):
+    """Context manager recording a run to the log."""
     r = Run(name, log, **kw)
     try:
         yield r
@@ -193,11 +207,13 @@ SACCT = "JobID,JobName,Partition,State,Submit,Start,End,Elapsed,AllocCPUS,TotalC
 
 
 def _mb(x):
+    """Megabytes from a size such as 512M or 2G."""
     m = re.match(r"([\d.]+)([KMGT]?)", x or "")
     return float(m[1]) * {"K": 1 / 1024, "M": 1, "G": 1024, "T": 1024**2, "": 1 / 2**20}[m[2]] if m else 0.0
 
 
 def _sec(t):
+    """Seconds from a time such as 1-02:03:04."""
     if not t:
         return 0.0
     d, _, t = t.rpartition("-")

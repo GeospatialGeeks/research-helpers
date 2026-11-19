@@ -19,11 +19,13 @@ from pathlib import Path
 
 
 def find_document(path):
+    """The document project folder containing a path."""
     path = Path(path).resolve()
     return next((p for p in [path, *path.parents] if (p / "document.toml").exists()), None)
 
 
 def preview(tex, *what):
+    """Rebuild the PDF and/or web pages of the document containing a LaTeX file."""
     from . import pdf, web
     tex = Path(tex).resolve()
     doc = find_document(tex)

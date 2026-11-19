@@ -27,6 +27,7 @@ __all__ = ["block_folds", "AreaOfApplicability", "repeated_block_cv"]
 
 
 def block_ids(x, y, block_size):
+    """Spatial block id of each point on a grid of block_size."""
     x, y = np.asarray(x, float), np.asarray(y, float)
     return np.char.add(np.char.add(np.floor(x / block_size).astype(int).astype(str), "_"),
                        np.floor(y / block_size).astype(int).astype(str))
@@ -59,14 +60,22 @@ def repeated_block_cv(fit_predict, X, y, x, yc, block_sizes=(1000, 2000, 5000), 
 
 
 class AreaOfApplicability:
+    """Area of applicability (Meyer and Pebesma 2021): flags predictions far from the training data in
+        predictor space.
+    """
     def __init__(self, weights=None):
+        """Optional predictor weights (for example importances)."""
         self.weights = None if weights is None else np.asarray(weights, float)
 
     def _z(self, X):
+        """Predictors standardised by the training median and sd, weighted."""
         Z = (np.where(np.isnan(X), self.median, X) - self.median) / self.sd
         return Z * self.w
 
     def fit(self, X, folds=None, sample=3000, seed=0):
+        """Fit on training predictors: scaling, nearest-neighbour tree, mean pairwise distance and the
+                threshold (Q3 + 1.5 IQR of training dissimilarity, across folds if given).
+        """
         from scipy.spatial import cKDTree
         from scipy.spatial.distance import pdist
         X = np.asarray(X, float)
@@ -91,5 +100,6 @@ class AreaOfApplicability:
         return self
 
     def predict(self, X):
+        """Dissimilarity index of new points and whether each lies outside the area of applicability."""
         di = self.tree.query(self._z(np.asarray(X, float)), k=1)[0] / self.mean_d
         return di, di > self.threshold

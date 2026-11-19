@@ -49,6 +49,7 @@ ARTICLE_TOKENS = "\\usepackage[margin=25mm]{geometry}\n\\usepackage{rhcommon}\n\
 
 
 def _authors_elsevier(d):
+    """Elsevier author and affiliation commands."""
     out, seen = [], {}
     for a in d.get("authors", [dict(name=d.get("author", ""))]):
         k = a.get("affiliation", "")
@@ -60,10 +61,12 @@ def _authors_elsevier(d):
 
 
 def _authors_ieee(d):
+    """IEEE author block."""
     return "\\author{" + "\\and ".join(f"\\IEEEauthorblockN{{{a['name']}}}\\IEEEauthorblockA{{{a.get('affiliation', '')}}}" for a in d.get("authors", [dict(name=d.get("author", ""))])) + "}"
 
 
 def _elsevier(options, d):
+    """Front matter of an Elsevier article."""
     keys = " \\sep ".join(d.get("keywords", []))
     return f"""\\documentclass[{options}]{{elsarticle}}
 {PAPER}{d['_extra']}\\journal{{{d.get('journal', 'Journal')}}}
@@ -85,6 +88,7 @@ def _elsevier(options, d):
 
 
 def _ieee(d):
+    """Front matter of an IEEE article."""
     keys = ", ".join(d.get("keywords", []))
     return f"""\\documentclass[conference]{{IEEEtran}}
 {PAPER}\\usepackage[numbers,sort&compress]{{natbib}}
@@ -105,7 +109,9 @@ def _ieee(d):
 
 
 def _book(style, klass="report"):
+    """Front matter maker for a book-like layout."""
     def make(d):
+        """Title, contents and front matter of a book-like document."""
         toc = "\\tableofcontents\n" if d.get("contents", True) else ""
         date = d.get("date", datetime.date.today().strftime("%d %B %Y").lstrip("0"))
         return f"""\\documentclass[11pt,a4paper]{{{klass}}}
@@ -168,6 +174,7 @@ LAYOUTS = {
 
 
 def load(project):
+    """A document project's settings (document.toml) with defaults."""
     project = Path(project).resolve()
     d = tomllib.loads((project / "document.toml").read_text(encoding="utf8"))
     d["_root"] = project
@@ -190,10 +197,12 @@ def font_commands():
 
 
 def tokens():
+    """The shared design tokens (tokens.toml)."""
     return tomllib.loads((HERE / "tokens.toml").read_text(encoding="utf8"))
 
 
 def write_tokens(folder):
+    """Write the design tokens (colours, spacing, code size) as LaTeX definitions to rhtokens.tex in a folder."""
     t = tokens()
     c, s, ty = t["colour"], t["spacing"], t["type"]
     lines = [f"\\definecolor{{rh{k.replace('_', '')}}}{{HTML}}{{{v}}}" for k, v in c.items()]
@@ -203,6 +212,7 @@ def write_tokens(folder):
 
 
 def _template_files(names, dest):
+    """Copy the named template files into dest."""
     for name in names:
         latest = sorted((TEMPLATES / name / "files").glob("*")) if (TEMPLATES / name / "files").exists() else []
         roots = latest or [TEMPLATES / name]
@@ -322,6 +332,7 @@ def _project_from_module(d, spec):
 
 
 def _aux(d):
+    """Path of the LaTeX .aux file of the first layout."""
     first = d["layouts"][0]
     if first == "own":
         return d["_root"] / "build/own" / (Path(d.get("main", "main.tex")).stem + ".aux")
@@ -410,6 +421,7 @@ def _empty(folder):
 
 
 def _tex_to_md(path):
+    """A LaTeX file converted to Markdown."""
     tex = Path(path).read_text(encoding="utf8")
     tex = re.sub(r"(\\href\{[^{}]*\}\{(?:[^{}]|\{[^{}]*\})*\})\\footnote\{\\texttt\{[^{}]*\}\}", r"\1", tex)
     r = subprocess.run([shutil.which("pandoc"), "-f", "latex", "-t", PANDOC_SITE, "--wrap=none"], input=tex.encode("utf8"), capture_output=True)
@@ -470,6 +482,7 @@ def site_css():
 
 
 def _front(text):
+    """Markdown without its front matter."""
     return text.split("---\n", 2)[2] if text.startswith("---") else text
 
 
@@ -492,6 +505,7 @@ def _local_links(text, slugs, parent, site=""):
     """Links written for the old one-folder-per-page site, made into links between the Markdown pages: slug/ and
     ../slug/ point at a page of this guide, and ../../name/ at another guide beside it under parent."""
     def page(m):
+        """A link to another chapter rewritten for the site."""
         up, slug, anchor = m[1], m[2], m[3] or ""
         if slug in slugs or slug in ("full", "pdf"):
             return f"]({slug}.md{anchor})"
@@ -504,6 +518,7 @@ def _local_links(text, slugs, parent, site=""):
 
 
 def _site(d, docs, build):
+    """Build the web pages of a document."""
     root, w = d["_root"], d.get("web", {})
     nav, whole = [], []
     pages = sorted(docs.glob("[0-9]*.md"))
@@ -684,6 +699,7 @@ def _references(d):
 
 
 def json_str(s):
+    """A JSON string literal."""
     return '"' + str(s).replace('"', '\\"') + '"'
 
 
@@ -710,11 +726,13 @@ def check(project):
 
 
 def layouts():
+    """Print the available layouts."""
     for k, (_, about, _t) in LAYOUTS.items():
         print(f"{k:16} {about}")
 
 
 def _browser():
+    """Path of an installed Chromium-based browser."""
     for b in ("msedge", "chrome", "chromium", "google-chrome", r"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"):
         found = shutil.which(b)
         if found:
@@ -727,7 +745,9 @@ def _shoot_site(site, out, stem):
     if not browser or not site.exists():
         return
     class Quiet(http.server.SimpleHTTPRequestHandler):
+        """HTTP handler without request logging."""
         def log_message(self, *a):
+            """Do not log requests."""
             pass
 
     handler = functools.partial(Quiet, directory=str(site))

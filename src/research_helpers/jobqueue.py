@@ -21,6 +21,7 @@ __all__ = ["run_queue"]
 
 
 def _alive(pid):
+    """True if a process id is running."""
     try:
         if os.name == "nt":
             out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}"], capture_output=True, text=True).stdout
@@ -31,6 +32,7 @@ def _alive(pid):
 
 
 def _processes():
+    """Command lines of running processes."""
     try:
         if os.name == "nt":
             out = subprocess.run(["powershell", "-NoProfile", "-Command",
@@ -43,21 +45,27 @@ def _processes():
 
 
 def _keep_awake(on):
+    """Stop (or allow) the computer sleeping while jobs run (Windows)."""
     if os.name == "nt":
         import ctypes
         ctypes.windll.kernel32.SetThreadExecutionState(0x80000001 if on else 0x80000000)
 
 
 def run_queue(jobs, log, after_pid=None, after_file=None, after_text=None, wait_for_pattern=None, keep_awake=False, poll=60):
+    """Run shell jobs one after another, after an optional wait (a process, a file, a text in a file or a
+        running command), logging each start, end and exit code.
+    """
     log = pathlib.Path(log); log.parent.mkdir(parents=True, exist_ok=True)
     me = str(os.getpid())
 
     def write(s):
+        """Append a line to the log and print it."""
         with open(log, "a", encoding="utf-8") as f:
             f.write(s + "\n")
         print(s, flush=True)
 
     def busy():
+        """True while the thing waited for is still running or not yet there."""
         if after_pid and _alive(after_pid):
             return True
         if after_file and (not pathlib.Path(after_file).exists() or after_text not in pathlib.Path(after_file).read_text(errors="replace")):
@@ -82,4 +90,5 @@ def run_queue(jobs, log, after_pid=None, after_file=None, after_text=None, wait_
 
 
 def jobs_from_file(path):
+    """Commands from a file, one per line, without blanks and comments."""
     return [l.strip() for l in pathlib.Path(path).read_text(encoding="utf-8").splitlines() if l.strip() and not l.strip().startswith("#")]

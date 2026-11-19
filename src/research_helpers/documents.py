@@ -15,6 +15,7 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class DocType:
+    """A kind of document: what it is for, its template and build settings."""
     about: str
     starter: str            # rh template starter, or the name of a skeleton below
     engine: str
@@ -55,6 +56,7 @@ IGNORE = "*.aux\n*.log\n*.out\n*.toc\n*.bbl\n*.blg\n*.spl\n*.fls\n*.fdb_latexmk\
 
 
 def new(kind, folder):
+    """Start a new document of a kind in a folder from its template."""
     t, d = TYPES[kind], Path(folder)
     if kind == "ulster-thesis" or t.starter == "latex-poster":
         raise SystemExit(f"{kind}: start from its own template, then add .doctype")
@@ -75,6 +77,7 @@ def new(kind, folder):
 
 
 def build(folder):
+    """Compile a document folder to PDF and make a preview."""
     from .paperkit import build as compile_tex, preview
     d = Path(folder)
     t = TYPES[(d / ".doctype").read_text().strip()]

@@ -30,6 +30,7 @@ from pathlib import Path
 
 
 def _md_to_tex(md):
+    """Markdown converted to LaTeX by pandoc."""
     r = subprocess.run([shutil.which("pandoc"), "-f", "markdown-smart", "-t", "latex", "--wrap=none", "--shift-heading-level-by=1"],
                        input=md.encode("utf8"), capture_output=True, check=True)
     tex = r.stdout.decode("utf8").replace("\r\n", "\n")
@@ -37,12 +38,14 @@ def _md_to_tex(md):
 
 
 def _listing(text, lang, title):
+    """LaTeX listing of code or output with a title."""
     text = text.rstrip("\n")
     opts = f"language={lang}" + (",numbers=none" if lang == "text" else "")       # outputs carry no line numbers
     return f"\\nbprompt{{{title}}}\n\\begin{{lstlisting}}[{opts}]\n{text}\n\\end{{lstlisting}}\n"
 
 
 def _strip_ansi(s):
+    """Text without terminal colour codes."""
     return re.sub(r"\x1b\[[0-9;]*m", "", s)
 
 

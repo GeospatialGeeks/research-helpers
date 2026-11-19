@@ -20,3 +20,6 @@ another queue can wait for.
 ## Functions and classes
 
 **`run_queue(jobs, log, after_pid=None, after_file=None, after_text=None, wait_for_pattern=None, keep_awake=False, poll=60)`**
+
+Run shell jobs one after another, after an optional wait (a process, a file, a text in a file or a
+running command), logging each start, end and exit code.

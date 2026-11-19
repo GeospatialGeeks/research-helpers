@@ -37,6 +37,7 @@ CONNECTOR = "http://127.0.0.1:23119/connector/"
 
 
 def _get(url, accept=None, timeout=60):
+    """Response body of a URL with the library's headers (and an Accept type)."""
     h = dict(HDR)
     if accept:
         h["Accept"] = accept
@@ -50,10 +51,12 @@ def crossref(doi):
 
 
 def title_of(m):
+    """Title of a Crossref record."""
     return (m.get("title") or [""])[0]
 
 
 def year_of(m):
+    """Publication year of a Crossref record, or None."""
     return ((m.get("issued", {}).get("date-parts") or [[None]])[0] or [None])[0]
 
 
@@ -113,10 +116,12 @@ def author_works(name, institution=None, since=None, limit=200):
 
 # ---------------------------------------------------------------- Zotero
 def _zotero_dir():
+    """Zotero data folder (ZOTERO_DATA_DIR, else ~/Zotero)."""
     return pathlib.Path(os.environ.get("ZOTERO_DATA_DIR", pathlib.Path.home() / "Zotero"))
 
 
 def zotero_item(m):
+    """A Crossref record as a Zotero item (type, title, creators, date, DOI and more)."""
     kind = {"journal-article": "journalArticle", "proceedings-article": "conferencePaper", "book-chapter": "bookSection",
             "book": "book", "report": "report", "dataset": "dataset", "posted-content": "preprint"}.get(m.get("type"), "journalArticle")
     date = "-".join(str(p) for p in (m.get("issued", {}).get("date-parts") or [[None]])[0] if p)
@@ -144,6 +149,7 @@ def zotero_dois():
 
 
 def _connector(endpoint, payload):
+    """POST a payload to the running Zotero connector; returns the response."""
     req = urllib.request.Request(CONNECTOR + endpoint, data=json.dumps(payload).encode(), method="POST",
                                  headers={"Content-Type": "application/json", "X-Zotero-Connector-API-Version": "3"})
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -179,6 +185,7 @@ def to_zotero(records, collection=None):
 
 
 def queue_for_zotero(records, collection, queue_file):
+    """Append DOIs to a queue file (date, doi, collection) to add to Zotero later."""
     q = pathlib.Path(queue_file); new = not q.exists()
     with open(q, "a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
@@ -190,6 +197,7 @@ def queue_for_zotero(records, collection, queue_file):
 
 
 def push_queue(queue_file):
+    """Send every queued DOI to Zotero by collection; keeps the ones that fail in the queue."""
     q = pathlib.Path(queue_file)
     if not q.exists():
         print("no queue"); return

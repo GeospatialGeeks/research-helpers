@@ -25,6 +25,7 @@ SRC = ["GMBA Mountain Inventory v2", "Natural Earth"]
 
 
 def anatomy():
+    """Figure: the parts of a map (frame, grid, scale bar, north arrow, legend, credit)."""
     fig, ax = carto.map_axes(PROJ, EXTENT, width="double", ratio=0.62)
     cats = sorted(ranges.unit)
     for i, u in enumerate(cats):
@@ -39,6 +40,7 @@ def anatomy():
 
 
 def projections():
+    """Figure: one area in three projections."""
     fig, ax = plt.subplots(1, 3, figsize=carto.size("double", 0.34), subplot_kw={"projection": PROJ})
     for a, (name, crs) in zip(ax, (("Plate carree", ccrs.PlateCarree()), ("Web Mercator", ccrs.Mercator.GOOGLE), ("Albers equal-area", PROJ))):
         a.remove()
@@ -69,6 +71,7 @@ def projections():
 
 
 def colours():
+    """Figure: colour maps compared."""
     x = np.linspace(0, 1, 256)[None, :]
     maps = [("batlow: sequential, ordered values", cm.batlow), ("vik: diverging, around a meaningful zero", cm.vik), ("oleron: terrain, with land and sea", cm.oleron), ("jet: avoid", plt.get_cmap("jet"))]
     fig, ax = plt.subplots(len(maps), 2, figsize=carto.size("double", 0.3), gridspec_kw={"width_ratios": [4, 1]})
@@ -96,6 +99,7 @@ def colours():
 
 
 def before_after():
+    """Figure: a map before and after applying the house style."""
     fig = plt.figure(figsize=carto.size("double", 0.42))
     a = fig.add_subplot(1, 2, 1, projection=ccrs.PlateCarree())
     a.set_extent(EXTENT, ccrs.PlateCarree())

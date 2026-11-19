@@ -23,6 +23,7 @@ __all__ = ["data_register", "write_register", "script_reference", "sha256"]
 
 
 def sha256(path, chunk=1 << 22):
+    """SHA-256 of a file, read in chunks."""
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for b in iter(lambda: f.read(chunk), b""):
@@ -31,6 +32,9 @@ def sha256(path, chunk=1 << 22):
 
 
 def data_register(root, hash_limit_mb=200, skip=("_archive", ".git", "__pycache__")):
+    """One row per data folder: files, size, newest change, hash (up to hash_limit_mb) and source notes
+        from SOURCE.txt.
+    """
     root = pathlib.Path(root)
     rows = []
     for d in sorted({p.parent for p in root.rglob("*") if p.is_file() and not any(s in p.parts for s in skip)}):
@@ -56,6 +60,7 @@ def data_register(root, hash_limit_mb=200, skip=("_archive", ".git", "__pycache_
 
 
 def write_register(rows, out):
+    """Write the register rows as CSV."""
     out = pathlib.Path(out); out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]) if rows else ["folder"]); w.writeheader(); w.writerows(rows)
@@ -63,6 +68,7 @@ def write_register(rows, out):
 
 
 def _doc(p):
+    """Description of a script: a Python module docstring, else its first block comment."""
     t = p.read_text(encoding="utf-8", errors="replace")
     if p.suffix == ".py":
         try:
@@ -74,6 +80,7 @@ def _doc(p):
 
 
 def _git_last(p):
+    """Last commit (hash and date) touching a file."""
     r = subprocess.run(["git", "-C", str(p.parent), "log", "-1", "--format=%h %cs", "--", p.name], capture_output=True, text=True)
     return r.stdout.strip() or "not in git"
 

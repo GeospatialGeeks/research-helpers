@@ -21,20 +21,24 @@ TEXT_COLS = ("title", "abstract", "author_keywords", "index_keywords")
 
 
 def text_of(r, cols=TEXT_COLS):
+    """Title, abstract and keywords of a record as one string."""
     return " ".join(str(r.get(c, "") or "") for c in cols if str(r.get(c, "") or "") != "nan")
 
 
 def all_of(names):
+    """Rule: every named criterion matched."""
     names = set(names)
     return lambda m: names <= m
 
 
 def any_of(names):
+    """Rule: at least one named criterion matched."""
     names = set(names)
     return lambda m: bool(names & m)
 
 
 def apply(rec, criteria, rule, exclude_if=(), flag_if=(), cols=TEXT_COLS):
+    """Screen records by regular-expression criteria: matched criteria, include, decision and flags per record."""
     comp = {k: re.compile(v, re.I) for k, v in criteria.items()}
     matched, include, decision, flag = [], [], [], []
     for _, r in rec.iterrows():
@@ -48,6 +52,7 @@ def apply(rec, criteria, rule, exclude_if=(), flag_if=(), cols=TEXT_COLS):
 
 
 def cohen_kappa(a, b):
+    """Cohen's kappa of two screeners' decisions."""
     a, b = pd.Series(list(a)), pd.Series(list(b))
     cats = sorted(set(a) | set(b))
     po = (a == b).mean()

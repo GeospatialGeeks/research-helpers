@@ -21,6 +21,7 @@ TIKZ = re.compile(r"\\begin\{tikzpicture\}.*?\\end\{tikzpicture\}", re.S)
 
 @dataclass
 class Chapter:
+    """One chapter of the web version: slug, title and source."""
     slug: str
     path: Path
     group: str = ""
@@ -28,6 +29,7 @@ class Chapter:
 
 @dataclass
 class Project:
+    """Settings of a LaTeX-to-web conversion: folders, aux file, chapters, URL and boxes."""
     root: Path                      # folder LaTeX runs in
     aux: Path                       # .aux of a finished build
     chapters: list                  # Chapter items in reading order
@@ -52,10 +54,12 @@ class Project:
 
 
 def read(path):
+    """Text of a file with Unix line ends."""
     return Path(path).read_bytes().decode("utf8").replace("\r\n", "\n")
 
 
 def strip_comments(s):
+    """LaTeX without comments (escaped % kept)."""
     return re.sub(r"(?m)(?<!\\)%.*$", "", s)
 
 
@@ -69,10 +73,12 @@ def protect(s):
 
 
 def unprotect(s):
+    """Text with protected fragments restored."""
     return SHIELD.sub(lambda m: bytes.fromhex(m[1]).decode("utf8"), s)
 
 
 def load(path):
+    """A LaTeX file read, protected and without comments."""
     return strip_comments(protect(read(path)))
 
 
@@ -110,6 +116,7 @@ def labels(aux):
 def expand(s, project):
     """Inline every \\input that holds text; leave drawings and macro files in place."""
     def rep(m):
+        """A macro call replaced by its definition."""
         name = m[1]
         if "#" in name or ("generated/" in name and not any(k in name for k in project.inline_generated)):
             return m[0]
@@ -122,6 +129,7 @@ def expand(s, project):
 
 
 def macro_calls(s, name):
+    """Arguments of every call of a macro."""
     out = []
     for m in re.finditer(r"\\" + name + r"\s*\{", s):
         e = close_brace(s, m.end() - 1)
@@ -149,9 +157,11 @@ def split_figures(s, project):
         s = s[:a] + s[b:]
 
     def marker():
+        """Placeholder for the latest figure."""
         return f"\n\nFIGMARK{len(items) - 1}END\n\n"
 
     def figure(m):
+        """Store a figure (body, caption, label) and return its placeholder."""
         body, caption, label = m[1], "", ""
         if "\\caption" in body:
             i = body.rindex("\\caption")
@@ -168,6 +178,7 @@ def split_figures(s, project):
         return marker()
 
     def loose(m):
+        """Store a figure outside a float."""
         items.append((m[0], "", ""))
         return marker()
 
@@ -224,6 +235,7 @@ def build_figures(project):
 
 
 def token(label):
+    """Cross-reference placeholder of a label."""
     return "XREF" + label.encode().hex() + "ENDX"
 
 
@@ -238,6 +250,7 @@ def to_markdown(tex, project, page_of, numbers):
         raise RuntimeError(r.stderr.decode("utf8", "replace")[:800])
 
     def link(m):
+        """A cross-reference placeholder as a link."""
         key = bytes.fromhex(m[1]).decode()
         n = numbers.get(key, "?")
         return f"[{n}]({project.url}{page_of[key]}/#{key})" if key in page_of else n
@@ -252,6 +265,7 @@ def prepare(s, chapter, numbers, project):
     s = re.sub(r"\\input\{[^}]*\}", "", s)
 
     def listing(m):
+        """A listing from a file."""
         q = (Path(project.root) / m[1]).resolve()
         return "\\begin{verbatim}\n" + read(q) + "\\end{verbatim}" if q.exists() else ""
     s = re.sub(r"\\lstinputlisting\{([^}]+)\}", listing, s)
@@ -259,6 +273,7 @@ def prepare(s, chapter, numbers, project):
     s = re.sub(r"\\(begin|end)\{landscape\}", "", s)
 
     def where(m):
+        """A where-list after an equation."""
         rows = []
         for line in m[1].strip().split("\\\\"):
             cells = [x.strip() for x in line.split("&")]
@@ -274,10 +289,12 @@ def prepare(s, chapter, numbers, project):
         s = s.replace("\\end{" + env + "}", "\n\nBOXCLOSE\n\n")
 
     def eq_label(m):
+        """An equation label as its printed number."""
         return "\\tag{" + numbers.get(m[1], "?") + "}"
     s = re.sub(r"(\\begin\{(equation|align)\}.*?\\end\{\2\})", lambda m: re.sub(r"\\label\{([^}]+)\}", eq_label, m[0]).replace("{equation}", "{equation*}").replace("{align}", "{align*}"), s, flags=re.S)
 
     def table_caption(m):
+        """A table caption with its printed number."""
         return f"\\caption{{Table {numbers.get(m[2], '')}. {m[1]}}}"
     s = re.sub(r"\\caption\{((?:[^{}]|\{[^{}]*\})*)\}\s*\\label\{([^}]*tab[^}]*)\}", table_caption, s)
     s = re.sub(r"\\eqref\{([^}]+)\}|\\xeqref\{([^}]+)\}", lambda m: "(" + token(m[1] or m[2]) + ")", s)
@@ -285,6 +302,7 @@ def prepare(s, chapter, numbers, project):
     count = [0, 0]
 
     def number(m):
+        """A section heading with its printed number."""
         if m[1] == "section":
             count[0] += 1
             count[1] = 0
@@ -316,6 +334,7 @@ def units_out_of_text(md):
 def finish(md):
     """Restore boxes and tidy equations in Markdown from pandoc."""
     def box(m):
+        """A coloured box as HTML."""
         t = re.sub(r"\\ensuremath\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", m[2])
         t = re.sub(r"\$\^\{\\circ\}\\mathrm\{C\}\$", "\u00b0C", t)
         t = re.sub(r"\$([^$]*)\$", r"\\(\1\\)", t).replace("**", "")
