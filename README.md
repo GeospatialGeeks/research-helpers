@@ -14,10 +14,10 @@ Everyday helpers for reproducible research, collected from a PhD project and gen
 | `spatial_cv` | Spatial block folds, repeated block cross-validation, area of applicability of a model | â€“ |
 | `jobqueue` | Run long jobs one after another, after a condition, with a log (overnight runs) | `rh queue` |
 | `litreview` | Scopus and Web of Science ingest and de-duplication, rule-based screening, reviewer agreement, PRISMA counts, bibliometrics | â€“ |
-| `meteo` | Moisture, dew point, hypsometric thickness, Coriolis and geostrophic wind, wind components, unit conversions (Bolton 1980) | – |
-| `indices` | NDVI, NDWI, MNDWI, NDBI, NDSI, NBR, NDMI, EVI, SAVI for arrays, xarray and Earth Engine, band names by sensor | – |
-| `climstats` | Climatology, anomalies, trends with autocorrelation-corrected uncertainty (Santer et al. 2000), Theil-Sen, Mann-Kendall, block bootstrap | – |
-| `rasters` | GeoTIFF read and write, slope, aspect, hillshade, local relief, SAR dB and speckle filter, GLCM texture, lidar nDSM, zonal statistics | – |
+| `meteo` | Moisture, dew point, hypsometric thickness, Coriolis and geostrophic wind, wind components, unit conversions (Bolton 1980) | â€“ |
+| `indices` | NDVI, NDWI, MNDWI, NDBI, NDSI, NBR, NDMI, EVI, SAVI for arrays, xarray and Earth Engine, band names by sensor | â€“ |
+| `climstats` | Climatology, anomalies, trends with autocorrelation-corrected uncertainty (Santer et al. 2000), Theil-Sen, Mann-Kendall, block bootstrap | â€“ |
+| `rasters` | GeoTIFF read and write, slope, aspect, hillshade, local relief, SAR dB and speckle filter, GLCM texture, lidar nDSM, zonal statistics | â€“ |
 | `inventory` | Every function across many projects: documented or not, topic, and repeated copies | `python -m research_helpers.inventory` |
 
 ## Slides to images and PowerPoint
